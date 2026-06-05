@@ -1,0 +1,82 @@
+{
+  "menu": {
+    "title": "Kingdom Rush",
+    "subtitle": "Defend the Kingdom",
+    "play": "Play",
+    "options": "Options",
+    "credits": "Credits"
+  },
+  "options": {
+    "title": "Options",
+    "music": "Music",
+    "sfx": "Sound Effects",
+    "language": "Language",
+    "back": "Back",
+    "on": "On",
+    "off": "Off"
+  },
+  "map": {
+    "title": "Select Level",
+    "level": "Level",
+    "locked": "Locked",
+    "back": "Back"
+  },
+  "hud": {
+    "lives": "Lives",
+    "gold": "Gold",
+    "wave": "Wave",
+    "score": "Score",
+    "start_wave": "Start Wave",
+    "fast_forward": "Fast Forward",
+    "menu": "Menu"
+  },
+  "towers": {
+    "barracks": "Barracks",
+    "archer": "Archers",
+    "mage": "Mages",
+    "artillery": "Artillery",
+    "sell": "Sell",
+    "upgrade": "Upgrade",
+    "cost": "Cost",
+    "damage": "Damage",
+    "range": "Range",
+    "speed": "Speed"
+  },
+  "powers": {
+    "title": "Powers",
+    "reinforcements": "Reinforcements",
+    "meteor": "Meteor",
+    "reinforcements_desc": "Send temporary soldiers to the path",
+    "meteor_desc": "Strike a chosen area with a meteor",
+    "cooldown": "Cooldown"
+  },
+  "enemies": {
+    "goblin": "Goblin",
+    "orc": "Orc",
+    "troll": "Troll",
+    "dark_knight": "Dark Knight",
+    "demon": "Demon"
+  },
+  "gameover": {
+    "title": "Defeat!",
+    "message": "The kingdom has fallen...",
+    "retry": "Try Again",
+    "menu": "Main Menu",
+    "score": "Final Score"
+  },
+  "victory": {
+    "title": "Victory!",
+    "message": "The kingdom is saved!",
+    "next": "Next Level",
+    "menu": "Main Menu",
+    "score": "Final Score",
+    "stars": "Stars"
+  },
+  "pause": {
+    "title": "Paused",
+    "resume": "Resume",
+    "restart": "Restart",
+    "options": "Options",
+    "menu": "Main Menu"
+  }
+}

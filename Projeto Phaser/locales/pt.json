@@ -1,0 +1,82 @@
+{
+  "menu": {
+    "title": "Kingdom Rush",
+    "subtitle": "Defende o Reino",
+    "play": "Jogar",
+    "options": "Opções",
+    "credits": "Créditos"
+  },
+  "options": {
+    "title": "Opções",
+    "music": "Música",
+    "sfx": "Efeitos Sonoros",
+    "language": "Língua",
+    "back": "Voltar",
+    "on": "Ligado",
+    "off": "Desligado"
+  },
+  "map": {
+    "title": "Selecionar Nível",
+    "level": "Nível",
+    "locked": "Bloqueado",
+    "back": "Voltar"
+  },
+  "hud": {
+    "lives": "Vidas",
+    "gold": "Ouro",
+    "wave": "Vaga",
+    "score": "Pontuação",
+    "start_wave": "Iniciar Vaga",
+    "fast_forward": "Acelerar",
+    "menu": "Menu"
+  },
+  "towers": {
+    "barracks": "Barracas",
+    "archer": "Arqueiros",
+    "mage": "Magos",
+    "artillery": "Artilharia",
+    "sell": "Vender",
+    "upgrade": "Melhorar",
+    "cost": "Custo",
+    "damage": "Dano",
+    "range": "Alcance",
+    "speed": "Velocidade"
+  },
+  "powers": {
+    "title": "Poderes",
+    "reinforcements": "Reforços",
+    "meteor": "Meteorito",
+    "reinforcements_desc": "Envia soldados temporários para o caminho",
+    "meteor_desc": "Lança um meteorito numa área escolhida",
+    "cooldown": "Recarga"
+  },
+  "enemies": {
+    "goblin": "Goblin",
+    "orc": "Orc",
+    "troll": "Troll",
+    "dark_knight": "Cavaleiro Negro",
+    "demon": "Demônio"
+  },
+  "gameover": {
+    "title": "Derrota!",
+    "message": "O reino caiu...",
+    "retry": "Tentar de Novo",
+    "menu": "Menu Principal",
+    "score": "Pontuação Final"
+  },
+  "victory": {
+    "title": "Vitória!",
+    "message": "O reino está salvo!",
+    "next": "Próximo Nível",
+    "menu": "Menu Principal",
+    "score": "Pontuação Final",
+    "stars": "Estrelas"
+  },
+  "pause": {
+    "title": "Pausa",
+    "resume": "Continuar",
+    "restart": "Reiniciar",
+    "options": "Opções",
+    "menu": "Menu Principal"
+  }
+}
