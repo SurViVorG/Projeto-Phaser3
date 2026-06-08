@@ -32,6 +32,10 @@ export default class HUD {
   /** Destrói todos os elementos do HUD (para recriar com nova língua) */
   destroy() {
     this.hideTowerPanel();
+    for (const state of Object.values(this._powerState)) {
+      if (state.onPowerUsed) this.scene.events.off('powerUsed', state.onPowerUsed);
+      state.activeTween?.stop();
+    }
     for (const o of this._objects) {
       try { o.destroy(); } catch (e) {}
     }
@@ -65,10 +69,10 @@ export default class HUD {
     }).setOrigin(0.5).setDepth(11).setScrollFactor(0);
 
     // Score
-    scene.add.text(W - 230, 30, I18n.t('hud.score') + ':', {
+    scene.add.text(W - 270, 30, I18n.t('hud.score') + ':', {
       fontFamily: 'Georgia, serif', fontSize: '18px', color: '#888'
     }).setOrigin(0, 0.5).setDepth(11).setScrollFactor(0);
-    this._scoreText = scene.add.text(W - 155, 30, '0', {
+    this._scoreText = scene.add.text(W - 115, 30, '0', {
       fontFamily: 'Georgia, serif', fontSize: '20px', color: '#a5d6a7'
     }).setOrigin(0, 0.5).setDepth(11).setScrollFactor(0);
 
@@ -230,20 +234,31 @@ export default class HUD {
         scene.events.emit('floatHUD', x, y - 30, rem + 's', '#ef5350');
         return;
       }
-
-      const duration = cooldownMs / (scene._fastMode ? 2 : 1);
-      state.cooldownEndTime = now + duration;
-
+      // Iniciar o drag — o cooldown só começa quando o poder for de facto lançado
       scene.events.emit('dragPower', powerType);
-      this._startCooldownTween(state, duration);
     });
+
+    // O cooldown só arranca ao receber 'powerUsed' (emitido por castMeteor/castReinforcements)
+    const onPowerUsed = (usedType) => {
+      if (usedType !== powerType) return;
+      const now = Date.now();
+      const speedMult = scene._fastMode ? 2 : 1;
+      const duration = cooldownMs / speedMult;
+      state.cooldownEndTime = now + duration;
+      this._startCooldownTween(state, duration, speedMult);
+    };
+    scene.events.on('powerUsed', onPowerUsed);
+    state.onPowerUsed = onPowerUsed; // guardado para limpeza no destroy()
   }
 
-  // Inicia (ou reinicia) o tween visual de cooldown com a duração indicada
-  _startCooldownTween(state, duration) {
+  // Inicia (ou reinicia) o tween visual de cooldown.
+  // realDuration = ms reais até expirar; speedMult = fator de velocidade (1 ou 2).
+  // O contador visual começa em realDuration*speedMult e desce até 0 em realDuration ms reais,
+  // ou seja, em modo x2 desce 2 segundos por cada segundo real.
+  _startCooldownTween(state, realDuration, speedMult = 1) {
     state.activeTween?.stop();
     state.activeTween = this.scene.tweens.addCounter({
-      from: duration, to: 0, duration,
+      from: realDuration * speedMult, to: 0, duration: realDuration,
       onUpdate: (tween) => {
         const rem = Math.ceil(tween.getValue() / 1000);
         state.cdOverlay.setFillStyle(0x000000, 0.6);
@@ -261,11 +276,16 @@ export default class HUD {
   // Pausa o countdown dos poderes (chamado quando a wave termina)
   pausePowerCooldowns() {
     const now = Date.now();
+    const speedMult = this.scene._fastMode ? 2 : 1;
     for (const state of Object.values(this._powerState)) {
       const remaining = state.cooldownEndTime - now;
       if (remaining > 0 && state.pausedRemaining === null) {
         state.pausedRemaining = remaining;
-        state.activeTween?.pause();
+        state.activeTween?.stop();
+        state.activeTween = null;
+        // Mostra o valor congelado no display
+        state.cdOverlay.setFillStyle(0x000000, 0.6);
+        state.cdText.setText(Math.ceil(remaining * speedMult / 1000) + 's');
       }
     }
   }
@@ -273,11 +293,13 @@ export default class HUD {
   // Retoma o countdown dos poderes (chamado quando a próxima wave começa)
   resumePowerCooldowns() {
     const now = Date.now();
+    const speedMult = this.scene._fastMode ? 2 : 1;
     for (const state of Object.values(this._powerState)) {
       if (state.pausedRemaining !== null) {
-        state.cooldownEndTime = now + state.pausedRemaining;
+        const realDuration = state.pausedRemaining;
+        state.cooldownEndTime = now + realDuration;
         state.pausedRemaining = null;
-        state.activeTween?.resume();
+        this._startCooldownTween(state, realDuration, speedMult);
       }
     }
   }
@@ -317,14 +339,23 @@ export default class HUD {
       btn.setText(fast ? '⏩ x2' : '⏩ x1');
       btn.setColor(fast ? '#fdd835' : '#888');
 
-      // Reescalar os cooldowns ativos para refletir a nova velocidade
+      // Reescalar os cooldowns para refletir a nova velocidade
       const now = Date.now();
       for (const state of Object.values(this._powerState)) {
+        if (state.pausedRemaining !== null) {
+          // Cooldown congelado entre waves: escalar o tempo guardado
+          state.pausedRemaining = fast ? state.pausedRemaining / 2 : state.pausedRemaining * 2;
+          const displayMs = state.pausedRemaining * (fast ? 2 : 1);
+          state.cdText.setText(Math.ceil(displayMs / 1000) + 's');
+          continue;
+        }
         const remaining = state.cooldownEndTime - now;
         if (remaining <= 0) continue;
-        const newRemaining = fast ? remaining / 2 : remaining * 2;
-        state.cooldownEndTime = now + newRemaining;
-        this._startCooldownTween(state, newRemaining);
+        // Recalcular duração real mantendo o valor visual contínuo:
+        // from = newRealDuration * newSpeedMult = remaining (sem salto no display)
+        const newRealDuration = fast ? remaining / 2 : remaining * 2;
+        state.cooldownEndTime = now + newRealDuration;
+        this._startCooldownTween(state, newRealDuration, fast ? 2 : 1);
       }
     });
     return btn;

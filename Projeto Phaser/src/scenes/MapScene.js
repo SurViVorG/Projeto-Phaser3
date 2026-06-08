@@ -1,17 +1,18 @@
 import I18n    from '../utils/I18n.js';
 import Settings from '../utils/Settings.js';
+import { totalWaves } from '../utils/WaveData.js';
 
 // Lê desbloqueios do localStorage
 function getLevels() {
   return [
     { id: 1, name: 'Floresta Sombria',     nameEN: 'Dark Forest',      x: 220, y: 400, unlocked: true,
-      waves: 6, stars: parseInt(localStorage.getItem('kr_stars_1') ?? '0') },
+      waves: totalWaves(1), stars: parseInt(localStorage.getItem('kr_stars_1') ?? '0') },
     { id: 2, name: 'Ruínas Antigas',       nameEN: 'Ancient Ruins',    x: 460, y: 280, unlocked: localStorage.getItem('kr_level_2') === 'true',
-      waves: 7, stars: parseInt(localStorage.getItem('kr_stars_2') ?? '0') },
+      waves: totalWaves(2), stars: parseInt(localStorage.getItem('kr_stars_2') ?? '0') },
     { id: 3, name: 'Fortaleza do Caos',    nameEN: 'Chaos Fortress',   x: 700, y: 430, unlocked: localStorage.getItem('kr_level_3') === 'true',
-      waves: 8, stars: parseInt(localStorage.getItem('kr_stars_3') ?? '0') },
+      waves: totalWaves(3), stars: parseInt(localStorage.getItem('kr_stars_3') ?? '0') },
     { id: 4, name: 'Covil do Demônio',     nameEN: 'Demon Lair',       x: 960, y: 310, unlocked: localStorage.getItem('kr_level_4') === 'true',
-      waves: 8, stars: parseInt(localStorage.getItem('kr_stars_4') ?? '0') }
+      waves: totalWaves(4), stars: parseInt(localStorage.getItem('kr_stars_4') ?? '0') }
   ];
 }
 

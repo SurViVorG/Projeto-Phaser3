@@ -400,6 +400,7 @@ export default class GameScene extends Phaser.Scene {
 
   // ── PODERES ─────────────────────────────────────────────────────────────────
   castReinforcements(x, y) {
+    this.events.emit('powerUsed', 'reinforcements');
     Settings.playSfx(this, 'sfx_reinf');
     // Stats dos soldados de reforço (temporários, mais fortes)
     const reinfStats = { hp: 200, soldierDmg: 18 };
@@ -422,6 +423,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   castMeteor(x, y) {
+    this.events.emit('powerUsed', 'meteor');
     Settings.playSfx(this, 'sfx_meteor');
     const meteor = this.add.image(x, y - 320, 'meteor').setDepth(10).setScale(0.5);
     this.tweens.add({
