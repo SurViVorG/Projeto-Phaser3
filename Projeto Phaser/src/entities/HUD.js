@@ -7,7 +7,7 @@ export default class HUD {
     this.scene = scene;
     this._towerPanel  = null;
     this._rangeCircle = null;
-    this._powerCooldowns = {};
+    this._powerState  = {};   // estado dos cooldowns dos poderes (keyed by powerType)
     this._objects = [];
 
     // Intercetar scene.add durante o build para registar tudo automaticamente
@@ -183,7 +183,6 @@ export default class HUD {
   createDragPowerBtn(x, y, iconKey, label, powerType, cooldownMs) {
     const scene = this.scene;
 
-    // Fundo do botão
     const bg = scene.add.rectangle(x, y, 52, 52, 0x1a0f00, 0.85)
       .setDepth(10).setScrollFactor(0)
       .setStrokeStyle(1, 0x9c27b0, 0.6);
@@ -192,7 +191,6 @@ export default class HUD {
       .setDepth(11).setScrollFactor(0)
       .setInteractive({ useHandCursor: true, draggable: false });
 
-    // Overlay de cooldown
     const cdOverlay = scene.add.rectangle(x, y, 52, 52, 0x000000, 0)
       .setDepth(12).setScrollFactor(0);
     const cdText = scene.add.text(x, y, '', {
@@ -200,13 +198,21 @@ export default class HUD {
       color: '#fff', stroke: '#000', strokeThickness: 2
     }).setOrigin(0.5).setDepth(13).setScrollFactor(0);
 
-    // Tooltip
     const tooltip = scene.add.text(x, y - 36, label, {
       fontFamily: 'monospace', fontSize: '10px', color: '#d4a56a',
       backgroundColor: '#0d0d1a', padding: { x: 4, y: 2 }
     }).setOrigin(0.5).setDepth(14).setScrollFactor(0).setAlpha(0);
 
-    let lastUsed = -cooldownMs; // disponível desde o início
+    // Estado persistente do poder (acessível externamente para fast mode e pausa)
+    const state = {
+      cooldownMs,
+      cooldownEndTime: 0,    // wall-clock ms em que o cooldown expira (0 = disponível)
+      pausedRemaining: null, // ms restantes quando pausado entre waves (null = não pausado)
+      activeTween: null,
+      cdOverlay,
+      cdText
+    };
+    this._powerState[powerType] = state;
 
     icon.on('pointerover', () => {
       scene.tweens.add({ targets: tooltip, alpha: 1, duration: 150 });
@@ -219,32 +225,61 @@ export default class HUD {
 
     icon.on('pointerdown', () => {
       const now = Date.now();
-      if (now - lastUsed < cooldownMs) {
-        const rem = Math.ceil((cooldownMs - (now - lastUsed)) / 1000);
+      if (now < state.cooldownEndTime) {
+        const rem = Math.ceil((state.cooldownEndTime - now) / 1000);
         scene.events.emit('floatHUD', x, y - 30, rem + 's', '#ef5350');
         return;
       }
-      lastUsed = now;
 
-      // Iniciar drag do poder
+      const duration = cooldownMs / (scene._fastMode ? 2 : 1);
+      state.cooldownEndTime = now + duration;
+
       scene.events.emit('dragPower', powerType);
-
-      // Iniciar cooldown visual
-      scene.tweens.addCounter({
-        from: cooldownMs, to: 0, duration: cooldownMs,
-        onUpdate: (tween) => {
-          const rem = Math.ceil(tween.getValue() / 1000);
-          cdOverlay.setFillStyle(0x000000, 0.6);
-          cdText.setText(rem + 's');
-        },
-        onComplete: () => {
-          cdOverlay.setFillStyle(0x000000, 0);
-          cdText.setText('');
-        }
-      });
+      this._startCooldownTween(state, duration);
     });
+  }
 
-    this._powerCooldowns[powerType] = { lastUsed, cooldownMs };
+  // Inicia (ou reinicia) o tween visual de cooldown com a duração indicada
+  _startCooldownTween(state, duration) {
+    state.activeTween?.stop();
+    state.activeTween = this.scene.tweens.addCounter({
+      from: duration, to: 0, duration,
+      onUpdate: (tween) => {
+        const rem = Math.ceil(tween.getValue() / 1000);
+        state.cdOverlay.setFillStyle(0x000000, 0.6);
+        state.cdText.setText(rem + 's');
+      },
+      onComplete: () => {
+        state.cooldownEndTime = 0;
+        state.activeTween = null;
+        state.cdOverlay.setFillStyle(0x000000, 0);
+        state.cdText.setText('');
+      }
+    });
+  }
+
+  // Pausa o countdown dos poderes (chamado quando a wave termina)
+  pausePowerCooldowns() {
+    const now = Date.now();
+    for (const state of Object.values(this._powerState)) {
+      const remaining = state.cooldownEndTime - now;
+      if (remaining > 0 && state.pausedRemaining === null) {
+        state.pausedRemaining = remaining;
+        state.activeTween?.pause();
+      }
+    }
+  }
+
+  // Retoma o countdown dos poderes (chamado quando a próxima wave começa)
+  resumePowerCooldowns() {
+    const now = Date.now();
+    for (const state of Object.values(this._powerState)) {
+      if (state.pausedRemaining !== null) {
+        state.cooldownEndTime = now + state.pausedRemaining;
+        state.pausedRemaining = null;
+        state.activeTween?.resume();
+      }
+    }
   }
 
   // ── BOTÕES DE CONTROLO ───────────────────────────────────────────────────────
@@ -278,10 +313,19 @@ export default class HUD {
 
     btn.on('pointerdown', () => {
       fast = !fast;
-      // GameScene multiplica o delta por 2 quando _fastMode está activo
       scene._fastMode = fast;
       btn.setText(fast ? '⏩ x2' : '⏩ x1');
       btn.setColor(fast ? '#fdd835' : '#888');
+
+      // Reescalar os cooldowns ativos para refletir a nova velocidade
+      const now = Date.now();
+      for (const state of Object.values(this._powerState)) {
+        const remaining = state.cooldownEndTime - now;
+        if (remaining <= 0) continue;
+        const newRemaining = fast ? remaining / 2 : remaining * 2;
+        state.cooldownEndTime = now + newRemaining;
+        this._startCooldownTween(state, newRemaining);
+      }
     });
     return btn;
   }

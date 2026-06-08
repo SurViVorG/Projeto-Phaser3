@@ -35,14 +35,19 @@
 
 **Funcionalidades implementadas:**
 - 4 tipos de torres (Barracas, Arqueiros, Magos, Artilharia) com 3 níveis cada
-- 5 tipos de inimigos (Goblin, Orc, Troll, Cavaleiro Negro, Demônio) com comportamentos distintos
-- Sistema de vagas progressivo (6 vagas no Nível 1)
-- 2 poderes especiais: Reforços e Meteorito com cooldown visual
+- 12 tipos de inimigos (Goblin, Goblin Veloz, Orc, Orc Blindado, Troll, Harpia, Golem, Cavaleiro Negro, Necromante, Wyvern, Demônio, Lich) com comportamentos distintos
+- 4 níveis com caminhos únicos, dificuldade crescente e vagas balanceadas (6–9 vagas por nível)
+- Ouro inicial ajustado por nível (250g nos níveis 1–2, 300g no 3, 375g no 4)
+- Sistema de armadura física e mágica nos inimigos; inimigos voadores ignoram barracas e artilharia
+- Barracas com soldados que bloqueiam inimigos (respawn automático após 8s)
+- Ponto de rally arrastável para reposicionar soldados na pista
+- 2 poderes especiais: Reforços (cooldown 30s) e Meteorito (cooldown 45s)
+  - Cooldown pausa entre vagas e escala com o botão ×2
 - Suporte multilíngue PT / EN com seletor acessível
-- Múltiplas cenas: Boot → Preload → Menu → Opções → Mapa → Jogo → GameOver/Vitória
+- Múltiplas cenas: Boot → Preload → Menu → Opções → Mapa → Jogo → Pausa → GameOver/Vitória
 - HUD completo: ouro, vidas, vaga atual, pontuação
 - Botão acelerar (×2) e iniciar vaga
-- Painel de upgrade/venda de torres
+- Painel de upgrade/venda de torres com círculo de alcance
 - Câmara com shake no meteorito
 - Partículas de faíscas, sangue e magia
 
@@ -101,7 +106,7 @@ npm run build
 ## Aspectos Multimédia
 
 ### Imagens / Sprites
-- **Ficheiros PNG reais** em `public/assets/images/` (32 sprites, ~12 KB no total)
+- **Ficheiros PNG reais** em `public/assets/images/` (~35 sprites, ~14 KB no total)
 - Torres (4 tipos × 3 níveis), 12 tipos de inimigos, projéteis, tiles de chão/caminho, castelo, portal e soldado
 - Resolução proporcional ao uso: torres 48×48, inimigos dimensionados ao seu `size`, tiles 64×64 — sem PNGs sobredimensionados
 - Carregados no `PreloadScene.preload()` com `this.load.image()`

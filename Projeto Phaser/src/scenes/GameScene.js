@@ -17,7 +17,7 @@ export default class GameScene extends Phaser.Scene {
 
   init(data) {
     this.level       = data.level || 1;
-    this.gold        = 250;
+    this.gold        = [250, 250, 300, 375][this.level - 1] ?? 250;
     this.lives       = 20;
     this.score       = 0;
     this.waveIndex   = 0;
@@ -321,6 +321,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.waveActive = true;
     this._hud.setWaveActive(true);
+    this._hud.resumePowerCooldowns();
     this._hud.setWave(this.waveIndex + 1, waves.length);
 
     // Construir lista de spawns com delays acumulados
@@ -383,6 +384,7 @@ export default class GameScene extends Phaser.Scene {
     // ── Vaga concluída ──
     this.waveActive = false;
     this._hud.setWaveActive(false);
+    this._hud.pausePowerCooldowns();
 
     const bonus = waveClearBonus(this.waveIndex);
     this.addGold(bonus);
@@ -400,7 +402,7 @@ export default class GameScene extends Phaser.Scene {
   castReinforcements(x, y) {
     Settings.playSfx(this, 'sfx_reinf');
     // Stats dos soldados de reforço (temporários, mais fortes)
-    const reinfStats = { hp: 120, soldierDmg: 18 };
+    const reinfStats = { hp: 200, soldierDmg: 18 };
     const offsets = [{x:0,y:0},{x:22,y:0},{x:-22,y:0},{x:0,y:22}];
 
     for (let i = 0; i < 4; i++) {

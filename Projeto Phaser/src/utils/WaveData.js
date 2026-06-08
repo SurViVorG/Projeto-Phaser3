@@ -23,7 +23,8 @@ export const LEVEL_WAVES = {
     [{type:'troll',count:3,interval:1500},{type:'necromancer',count:3,interval:1400},{type:'dark_knight',count:4,interval:1200},{type:'demon',count:2,interval:2500}]
   ],
   3: [
-    [{type:'goblin',count:8,interval:800},{type:'goblin_fast',count:4,interval:600}],
+    [{type:'goblin',count:7,interval:900}],
+    [{type:'goblin',count:5,interval:700},{type:'goblin_fast',count:4,interval:600}],
     [{type:'orc',count:5,interval:900},{type:'harpy',count:4,interval:900}],
     [{type:'orc',count:4,interval:800},{type:'orc_armored',count:4,interval:1300},{type:'troll',count:2,interval:1700}],
     [{type:'troll',count:3,interval:1500},{type:'dark_knight',count:4,interval:1300},{type:'harpy',count:5,interval:800}],
@@ -33,7 +34,7 @@ export const LEVEL_WAVES = {
     [{type:'golem',count:3,interval:2200},{type:'demon',count:4,interval:1800},{type:'lich',count:3,interval:2500}]
   ],
   4: [
-    [{type:'goblin',count:8,interval:700},{type:'goblin_fast',count:6,interval:500}],
+    [{type:'goblin',count:8,interval:800}],
     [{type:'orc',count:6,interval:800},{type:'harpy',count:5,interval:800}],
     [{type:'orc_armored',count:5,interval:1100},{type:'troll',count:3,interval:1500},{type:'wyvern',count:4,interval:1000}],
     [{type:'troll',count:4,interval:1300},{type:'dark_knight',count:5,interval:1200},{type:'harpy',count:6,interval:700}],

@@ -10,9 +10,9 @@ export const TOWER_DATA = {
     baseCost: 100,
     sellRatio: 0.6,
     levels: [
-      { damage: 0,  range: 96,  fireRate: 0,    hp: 80,  soldiers: 2, soldierDmg: 10, upgradeCost: 75,  label: 'I'  },
-      { damage: 0,  range: 112, fireRate: 0,    hp: 120, soldiers: 3, soldierDmg: 16, upgradeCost: 125, label: 'II' },
-      { damage: 0,  range: 128, fireRate: 0,    hp: 170, soldiers: 4, soldierDmg: 22, upgradeCost: null, label: 'III' }
+      { damage: 0,  range: 96,  fireRate: 0,    hp: 110, soldiers: 2, soldierDmg: 10, upgradeCost: 75,  label: 'I'  },
+      { damage: 0,  range: 112, fireRate: 0,    hp: 170, soldiers: 3, soldierDmg: 16, upgradeCost: 125, label: 'II' },
+      { damage: 0,  range: 128, fireRate: 0,    hp: 250, soldiers: 4, soldierDmg: 22, upgradeCost: null, label: 'III' }
     ]
   },
   archer: {

@@ -303,6 +303,7 @@ export class Soldier extends Phaser.GameObjects.Image {
     this._atkRate  = 1100;
     this._atkTimer = 0;
     this._target   = null;   // inimigo em combate
+    // Nota: dano recebido é gerido por Enemy.attackSoldiers (uma vez por 1200ms)
     this._rallyX   = rallyX;
     this._rallyY   = rallyY;
     this._range    = 44;
@@ -366,13 +367,6 @@ export class Soldier extends Phaser.GameObjects.Image {
       const dy = this._rallyY - this.y;
       const d  = Math.sqrt(dx*dx + dy*dy);
       if (d > 6) { this.x += dx/d * 2; this.y += dy/d * 2; }
-    }
-
-    // Inimigos atacam os soldados de volta
-    if (this._target && time - this._atkTimer >= this._atkRate * 0.8) {
-      // O inimigo faz contra-ataque proporcional ao seu dano
-      const counterDmg = (this._target.data_ref?.damage || 1) * 8;
-      if (this.takeDamage(counterDmg)) return;
     }
 
     this._barBg.setPosition(this.x, this.y-16);
