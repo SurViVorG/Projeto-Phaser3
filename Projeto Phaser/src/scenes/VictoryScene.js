@@ -72,10 +72,14 @@ export default class VictoryScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '28px', color: '#fdd835'
     }).setOrigin(0.5);
 
-    // Próximo nível desbloqueado
+    // Próximo nível desbloqueado / jogo concluído
     if (nextLevel <= 4) {
       this.add.text(640, 465, '🔓 Nível ' + nextLevel + ' desbloqueado!', {
         fontFamily: 'Georgia, serif', fontSize: '20px', color: '#00e676'
+      }).setOrigin(0.5);
+    } else {
+      this.add.text(640, 465, '🏆 Jogo concluído! O reino está salvo!', {
+        fontFamily: 'Georgia, serif', fontSize: '20px', color: '#f0c040'
       }).setOrigin(0.5);
     }
 

@@ -29,8 +29,11 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.slowUntil  = 0;
     this._soldiers  = [];
 
-    // ── Sprite ────────────────────────────────────────────────────────────
-    const sprite = scene.add.image(0, 0, type);
+    // ── Sprite animado ────────────────────────────────────────────────────
+    const sprite = scene.add.sprite(0, 0, type, 0);
+    sprite.setDisplaySize(data.size * 2, data.size * 2);
+    sprite.play(type + '_walk');
+    this._sprite = sprite;
     this.add(sprite);
 
     // ── Ícone de tipo (voador / armadura) ─────────────────────────────────
@@ -88,6 +91,7 @@ export default class Enemy extends Phaser.GameObjects.Container {
     }
 
     const pt = this.path.getPoint(this.pathT);
+    if (this._sprite) this._sprite.setFlipX(pt.x < this.x);
     this.setPosition(pt.x, pt.y);
   }
 
@@ -120,6 +124,7 @@ export default class Enemy extends Phaser.GameObjects.Container {
 
   die() {
     this.alive = false;
+    this._sprite?.stop();
     this.scene.tweens.add({
       targets: this, alpha: 0, scaleX: 1.4, scaleY: 1.4,
       duration: 280,

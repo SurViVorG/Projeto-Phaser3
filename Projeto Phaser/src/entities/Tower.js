@@ -293,26 +293,39 @@ class Projectile extends Phaser.GameObjects.Image {
 }
 
 // ─── SOLDIER ─────────────────────────────────────────────────────────────────
-export class Soldier extends Phaser.GameObjects.Image {
+export class Soldier extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, stats, rallyX, rallyY) {
-    super(scene, x, y, 'soldier');
-    this.alive     = true;
-    this._hp       = stats.hp;
-    this._maxHp    = stats.hp;
-    this._dmg      = stats.soldierDmg;
-    this._atkRate  = 1100;
-    this._atkTimer = 0;
-    this._target   = null;   // inimigo em combate
+    super(scene, x, y, 'soldier', 0);
+    this.alive        = true;
+    this._hp          = stats.hp;
+    this._maxHp       = stats.hp;
+    this._dmg         = stats.soldierDmg;
+    this._atkRate     = 1100;
+    this._atkTimer    = 0;
+    this._target      = null;
     // Nota: dano recebido é gerido por Enemy.attackSoldiers (uma vez por 1200ms)
-    this._rallyX   = rallyX;
-    this._rallyY   = rallyY;
-    this._range    = 44;
-    this._combatRange = 50; // distância para iniciar combate
+    this._rallyX      = rallyX;
+    this._rallyY      = rallyY;
+    this._combatRange = 50;
+    this._curAnim     = '';
+    this.setDisplaySize(28, 28);
     this.setDepth(3);
     scene.add.existing(this);
+    this._setAnim('soldier_idle');
 
     this._barBg = scene.add.rectangle(x, y-16, 24, 4, 0x330000).setDepth(4);
     this._barFg = scene.add.rectangle(x-12, y-16, 24, 4, 0x00e676).setOrigin(0,0.5).setDepth(4);
+  }
+
+  _setAnim(key) {
+    if (key === 'soldier_attack') {
+      this._curAnim = key;
+      this.play(key);
+      return;
+    }
+    if (this._curAnim === key) return;
+    this._curAnim = key;
+    this.play(key, true);
   }
 
   update(time, enemies) {
@@ -330,43 +343,47 @@ export class Soldier extends Phaser.GameObjects.Image {
       for (const e of enemies) {
         if (!e.alive || e.flying) continue;
         const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
-        if (d < best && d <= this._combatRange) {
-          best = d; this._target = e;
-        }
+        if (d < best && d <= this._combatRange) { best = d; this._target = e; }
       }
       if (this._target) {
-        // Registar envolvimento no inimigo
         if (!this._target._engagedSoldiers) this._target._engagedSoldiers = 0;
         this._target._engagedSoldiers++;
-        // Bloquear o inimigo
         this._target.addSoldierBlock(this);
       }
     }
 
     if (this._target) {
-      // Mover em direção ao inimigo se não estiver encostado
       const dx = this._target.x - this.x;
       const dy = this._target.y - this.y;
       const d  = Math.sqrt(dx*dx + dy*dy);
       if (d > 28) {
         this.x += (dx/d) * 2.5;
         this.y += (dy/d) * 2.5;
-      }
-
-      // Atacar
-      if (time - this._atkTimer >= this._atkRate) {
-        if (this._target.takeDamage(this._dmg, false, false)) {
-          this.scene.events.emit('enemyKilled', this._target);
-          this._target = null;
+        this._setAnim('soldier_walk');
+        this.setFlipX(dx < 0);
+      } else {
+        if (time - this._atkTimer >= this._atkRate) {
+          this._setAnim('soldier_attack');
+          if (this._target.takeDamage(this._dmg, false, false)) {
+            this.scene.events.emit('enemyKilled', this._target);
+            this._target = null;
+          }
+          this._atkTimer = time;
+        } else if (this.anims.currentAnim?.key !== 'soldier_attack') {
+          this._setAnim('soldier_idle');
         }
-        this._atkTimer = time;
       }
     } else {
-      // Voltar ao rally
       const dx = this._rallyX - this.x;
       const dy = this._rallyY - this.y;
       const d  = Math.sqrt(dx*dx + dy*dy);
-      if (d > 6) { this.x += dx/d * 2; this.y += dy/d * 2; }
+      if (d > 6) {
+        this.x += dx/d * 2; this.y += dy/d * 2;
+        this._setAnim('soldier_walk');
+        this.setFlipX(dx < 0);
+      } else {
+        this._setAnim('soldier_idle');
+      }
     }
 
     this._barBg.setPosition(this.x, this.y-16);
@@ -387,7 +404,8 @@ export class Soldier extends Phaser.GameObjects.Image {
       this._target = null;
     }
     this._barBg?.destroy(); this._barFg?.destroy();
-    this.scene?.tweens.add({ targets: this, alpha: 0, duration: 300,
+    this.play('soldier_die');
+    this.scene?.tweens.add({ targets: this, alpha: 0, delay: 450, duration: 250,
       onComplete: () => this.destroy() });
   }
 }

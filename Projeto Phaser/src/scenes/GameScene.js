@@ -3,6 +3,7 @@ import Settings from '../utils/Settings.js';
 import { PATH_DATA, PATH_TILES, buildPath, snapToPath, isOnPath, TOWER_SLOTS } from '../utils/PathData.js';
 import { LEVEL_WAVES, totalWaves, waveClearBonus, waveRewardMultiplier } from '../utils/WaveData.js';
 import { TOWER_DATA, sellValue } from '../utils/TowerData.js';
+import { ENEMY_DATA } from '../utils/EnemyData.js';
 import Enemy from '../entities/Enemy.js';
 import { ArcherTower, MageTower, ArtilleryTower, BarracksTower, Soldier } from '../entities/Tower.js';
 import HUD from '../entities/HUD.js';
@@ -29,6 +30,8 @@ export default class GameScene extends Phaser.Scene {
     this._selectedTower = null;
     this._toSpawn    = 0;
     this._aliveCount = 0;
+    this._wavePreview = null;
+    this._gameEnded   = false;
     // poder de arrastar
     this._dragPower  = null;
     this._dragIcon   = null;
@@ -318,6 +321,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.waveActive) return;
     const waves = LEVEL_WAVES[this.level];
     if (this.waveIndex >= waves.length) return;
+    this._clearNextWavePreview();
 
     this.waveActive = true;
     this._hud.setWaveActive(true);
@@ -395,6 +399,8 @@ export default class GameScene extends Phaser.Scene {
     // Vitória só quando TODAS as vagas do nível terminaram
     if (this.waveIndex >= totalWaves(this.level)) {
       this.time.delayedCall(1200, () => this.endGame(true));
+    } else {
+      this._showNextWavePreview(this.waveIndex);
     }
   }
 
@@ -517,7 +523,101 @@ export default class GameScene extends Phaser.Scene {
     this._hud.updateGoldState(this.gold);
   }
 
+  // ── PRÉVIA DA PRÓXIMA ONDA ────────────────────────────────────────────────────
+  _showNextWavePreview(waveIdx) {
+    this._clearNextWavePreview();
+    const waves = LEVEL_WAVES[this.level];
+    if (waveIdx >= waves.length) return;
+
+    const portalY = PATH_DATA[this.level][0].y;
+    const ax = 75, ay = portalY;
+
+    const arrow = this.add.text(ax, ay - 6, '▶', {
+      fontFamily: 'monospace', fontSize: '28px',
+      color: '#ff8800', stroke: '#4a2200', strokeThickness: 2
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+
+    const waveLbl = this.add.text(ax, ay + 16, 'vaga ' + (waveIdx + 1), {
+      fontFamily: 'monospace', fontSize: '10px',
+      color: '#ffd080', stroke: '#000', strokeThickness: 1
+    }).setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true });
+
+    this.tweens.add({
+      targets: [arrow, waveLbl],
+      scaleX: 1.18, scaleY: 1.18,
+      duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    });
+
+    const tooltip = this._buildWaveTooltip(waves[waveIdx], waveIdx, ax, ay);
+    tooltip.setVisible(false);
+
+    const show = () => tooltip.setVisible(true);
+    const hide = () => tooltip.setVisible(false);
+    arrow.on('pointerover', show).on('pointerout', hide);
+    waveLbl.on('pointerover', show).on('pointerout', hide);
+
+    this._wavePreview = { arrow, waveLbl, tooltip };
+  }
+
+  _clearNextWavePreview() {
+    if (!this._wavePreview) return;
+    this._wavePreview.arrow?.destroy();
+    this._wavePreview.waveLbl?.destroy();
+    this._wavePreview.tooltip?.destroy();
+    this._wavePreview = null;
+  }
+
+  _buildWaveTooltip(wave, waveIdx, ax, ay) {
+    const lineH = 20, pad = 10;
+    const w = 175;
+    const h = pad * 2 + 24 + wave.length * lineH;
+    const tx = ax + 18;
+    const ty = Math.max(8, Math.min(ay - Math.round(h / 2), 590 - h));
+
+    const container = this.add.container(tx, ty);
+    container.setDepth(18);
+
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0d0d22, 0.92);
+    bg.lineStyle(1.5, 0xc8960c, 0.85);
+    bg.fillRect(0, 0, w, h);
+    bg.strokeRect(0, 0, w, h);
+    container.add(bg);
+
+    const title = this.add.text(Math.round(w / 2), pad, 'Vaga ' + (waveIdx + 1), {
+      fontFamily: 'Georgia, serif', fontSize: '13px',
+      color: '#f0c040', stroke: '#000', strokeThickness: 1
+    }).setOrigin(0.5, 0);
+    container.add(title);
+
+    const div = this.add.graphics();
+    div.lineStyle(1, 0x666644, 0.6);
+    div.lineBetween(pad, pad + 19, w - pad, pad + 19);
+    container.add(div);
+
+    wave.forEach((group, i) => {
+      const data    = ENEMY_DATA[group.type];
+      const col     = data?.color ?? 0xaaaaaa;
+      const hexCol  = '#' + col.toString(16).padStart(6, '0');
+      const yRow    = pad + 24 + i * lineH;
+      const dot     = this.add.text(pad, yRow, '■', {
+        fontFamily: 'monospace', fontSize: '10px', color: hexCol
+      }).setOrigin(0, 0);
+      const nameTxt = this.add.text(pad + 16, yRow,
+        (data?.label || group.type) + ' ×' + group.count, {
+        fontFamily: 'monospace', fontSize: '11px', color: '#e0e0e0',
+        stroke: '#000', strokeThickness: 1
+      }).setOrigin(0, 0);
+      container.add([dot, nameTxt]);
+    });
+
+    return container;
+  }
+
   endGame(victory) {
+    if (this._gameEnded) return;
+    this._gameEnded = true;
+    this._clearNextWavePreview();
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(victory ? 'VictoryScene' : 'GameOverScene',
