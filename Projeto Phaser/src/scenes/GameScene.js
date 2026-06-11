@@ -32,6 +32,10 @@ export default class GameScene extends Phaser.Scene {
     this._aliveCount = 0;
     this._wavePreview = null;
     this._gameEnded   = false;
+    this._rallyMode        = null;
+    this._rallyGhost       = null;
+    this._rallyRangeCircle = null;
+    this._skipRallyOnce    = false;
     // poder de arrastar
     this._dragPower  = null;
     this._dragIcon   = null;
@@ -61,6 +65,19 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('enemyKilled',   (e)    => this.onEnemyKilled(e));
     this.events.on('dragPower',     (type) => this.startDragPower(type));
     this.events.on('setRally',      (tower, px, py) => this.setTowerRally(tower, px, py));
+    this.events.on('startRallyMode', (tower) => this.enterRallyMode(tower));
+
+    this.events.on('damageFloat', (x, y, amount, isMagic) => {
+      const color = isMagic ? '#ce93d8' : '#ff5252';
+      const txt = this.add.text(x, y, '-' + amount, {
+        fontFamily: 'monospace', fontSize: '12px',
+        color, stroke: '#000', strokeThickness: 2
+      }).setOrigin(0.5).setDepth(22);
+      this.tweens.add({
+        targets: txt, y: y - 30, alpha: 0, duration: 850,
+        onComplete: () => txt.destroy()
+      });
+    });
 
     // Input
     this.input.on('pointermove', (ptr) => this.onPointerMove(ptr));
@@ -72,6 +89,7 @@ export default class GameScene extends Phaser.Scene {
       this.cancelDragPower();
       this._hud.hideTowerPanel();
       this._selectedTower = null;
+      this._exitRallyMode();
     });
 
     // Tecla P para pausar
@@ -98,6 +116,9 @@ export default class GameScene extends Phaser.Scene {
       speed: { min: 30, max: 80 }, scale: { start: 0.6, end: 0 },
       lifespan: 300, emitting: false
     }).setDepth(8);
+
+    // Mostrar prévia da primeira onda antes do jogador clicar em "Iniciar"
+    this._showNextWavePreview(0);
   }
 
   // ── MAPA ────────────────────────────────────────────────────────────────────
@@ -162,6 +183,28 @@ export default class GameScene extends Phaser.Scene {
     this.input.setDefaultCursor('crosshair');
   }
 
+  enterRallyMode(tower) {
+    this.exitBuildMode();
+    this.cancelDragPower();
+    this._hud.hideTowerPanel();
+    this._rallyMode     = tower;
+    this._skipRallyOnce = true;
+    this.input.setDefaultCursor('crosshair');
+
+    const r = tower.stats.range;
+    this._rallyRangeCircle = this.add.image(tower.x, tower.y, 'range_circle')
+      .setDisplaySize(r * 2, r * 2).setDepth(1).setAlpha(0.35);
+
+    this.floatText(tower.x, tower.y - 52, '⚑ Clica na pista para definir rally', '#42a5f5');
+  }
+
+  _exitRallyMode() {
+    this._rallyMode = null;
+    this._rallyGhost?.destroy();       this._rallyGhost = null;
+    this._rallyRangeCircle?.destroy(); this._rallyRangeCircle = null;
+    this.input.setDefaultCursor('default');
+  }
+
   exitBuildMode() {
     this._buildMode = null;
     this._buildGhost?.destroy();      this._buildGhost = null;
@@ -192,6 +235,23 @@ export default class GameScene extends Phaser.Scene {
 
   // ── INPUT ───────────────────────────────────────────────────────────────────
   onPointerMove(ptr) {
+    if (this._rallyMode) {
+      if (!this._rallyGhost) {
+        this._rallyGhost = this.add.text(0, 0, '⚑', {
+          fontSize: '22px', color: '#42a5f5', stroke: '#001a33', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(16);
+      }
+      const snapped = snapToPath(ptr.x, ptr.y, this.level);
+      if (snapped) {
+        const inRange = Phaser.Math.Distance.Between(
+          this._rallyMode.x, this._rallyMode.y, snapped.x, snapped.y
+        ) <= this._rallyMode.stats.range;
+        const color = inRange ? '#42a5f5' : '#ef5350';
+        this._rallyGhost.setPosition(snapped.x, snapped.y - 12).setAlpha(0.95).setColor(color);
+      } else {
+        this._rallyGhost.setPosition(ptr.x, ptr.y - 12).setAlpha(0.35).setColor('#888888');
+      }
+    }
     if (this._buildGhost) {
       this._buildGhost.setPosition(ptr.x, ptr.y);
       this._buildRangeGhost.setPosition(ptr.x, ptr.y);
@@ -204,6 +264,28 @@ export default class GameScene extends Phaser.Scene {
   onPointerDown(ptr) {
     // Ignorar cliques fora da área de jogo
     if (ptr.y > 640 || ptr.x > 1150) return;
+
+    // Modo de rally — clique na pista (dentro do alcance) define o ponto
+    if (this._rallyMode) {
+      if (this._skipRallyOnce) { this._skipRallyOnce = false; return; }
+      const snapped = snapToPath(ptr.x, ptr.y, this.level);
+      if (!snapped) {
+        this.floatText(ptr.x, ptr.y - 32, '✗ Clica na pista!', '#ef5350');
+        return; // mantém modo ativo
+      }
+      const dist = Phaser.Math.Distance.Between(
+        this._rallyMode.x, this._rallyMode.y, snapped.x, snapped.y
+      );
+      if (dist > this._rallyMode.stats.range) {
+        this.floatText(snapped.x, snapped.y - 32, '✗ Fora do alcance!', '#ef5350');
+        return; // mantém modo ativo
+      }
+      this._rallyMode.setRally(snapped.x, snapped.y);
+      Settings.playSfx(this, 'sfx_btn');
+      this.floatText(snapped.x, snapped.y - 32, '⚑ Rally!', '#42a5f5');
+      this._exitRallyMode();
+      return;
+    }
 
     if (this._buildMode) {
       this.tryPlaceTower(ptr.x, ptr.y);

@@ -1,4 +1,5 @@
 import { ENEMY_DATA } from '../utils/EnemyData.js';
+import Settings from '../utils/Settings.js';
 
 export default class Enemy extends Phaser.GameObjects.Container {
   /**
@@ -113,6 +114,11 @@ export default class Enemy extends Phaser.GameObjects.Container {
     }
     this.hp -= eff;
     this.updateBar();
+    if (Settings.dmgNumbers && eff >= 1) {
+      this.scene.events.emit('damageFloat',
+        this.x, this.y - this.data_ref.size - 8,
+        Math.round(eff), isMagic);
+    }
     if (this.hp <= 0) { this.die(); return true; }
     return false;
   }

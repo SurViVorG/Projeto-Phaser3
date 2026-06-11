@@ -260,11 +260,13 @@ export default class HUD {
     state.activeTween = this.scene.tweens.addCounter({
       from: realDuration * speedMult, to: 0, duration: realDuration,
       onUpdate: (tween) => {
+        if (!state.cdText?.active || !state.cdOverlay?.active) return;
         const rem = Math.ceil(tween.getValue() / 1000);
         state.cdOverlay.setFillStyle(0x000000, 0.6);
         state.cdText.setText(rem + 's');
       },
       onComplete: () => {
+        if (!state.cdText?.active || !state.cdOverlay?.active) return;
         state.cooldownEndTime = 0;
         state.activeTween = null;
         state.cdOverlay.setFillStyle(0x000000, 0);
@@ -390,7 +392,8 @@ export default class HUD {
     const scene = this.scene;
     const def   = TOWER_DATA[tower.towerType];
     const stats = tower.stats;
-    const W = 200, H = 220;
+    const isBarracks = tower.towerType === 'barracks';
+    const W = 200, H = isBarracks ? 252 : 220;
     const tx = Math.min(tower.x + 64, 1100);
     const ty = Math.max(tower.y - 100, 70);
 
@@ -422,6 +425,23 @@ export default class HUD {
         fontFamily: 'monospace', fontSize: '11px', color: '#aaa'
       }));
     });
+
+    // Rally (barracks only)
+    if (isBarracks) {
+      const rallyBtn = scene.add.text(W / 2, H - 90,
+        '⚑ ' + I18n.t('towers.set_rally'), {
+        fontFamily: 'monospace', fontSize: '12px',
+        color: '#42a5f5', backgroundColor: '#0d1a2e',
+        padding: { x: 8, y: 4 }
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      rallyBtn.on('pointerover', () => rallyBtn.setColor('#90caf9'));
+      rallyBtn.on('pointerout',  () => rallyBtn.setColor('#42a5f5'));
+      rallyBtn.on('pointerdown', () => {
+        this.hideTowerPanel();
+        scene.events.emit('startRallyMode', tower);
+      });
+      panel.add(rallyBtn);
+    }
 
     // Upgrade
     if (tower.canUpgrade()) {

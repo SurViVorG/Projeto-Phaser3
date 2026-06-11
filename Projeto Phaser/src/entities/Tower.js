@@ -166,33 +166,10 @@ export class BarracksTower extends Tower {
     this._rallyX = rx;
     this._rallyY = ry;
 
-    // Marcador de rally — arrastável, só fica em tiles de pista
+    // Marcador de rally — visual apenas; posição definida pelo menu da torre
     this._rallyMarker = scene.add.text(this._rallyX, this._rallyY, '⚑', {
       fontSize: '18px', color: '#42a5f5'
-    }).setOrigin(0.5).setDepth(6).setAlpha(0.9)
-      .setInteractive({ useHandCursor: true, draggable: true });
-
-    scene.input.setDraggable(this._rallyMarker);
-
-    this._rallyMarker.on('dragstart', () => this._rallyMarker.setAlpha(1));
-
-    this._rallyMarker.on('drag', (ptr, dx, dy) => {
-      // Snap ao tile de pista — só aceita posições na pista
-      const snapped = scene._snapToPath ? scene._snapToPath(dx, dy) : null;
-      if (snapped) {
-        this._rallyMarker.setPosition(snapped.x, snapped.y);
-        this._rallyX = snapped.x;
-        this._rallyY = snapped.y;
-      }
-    });
-
-    this._rallyMarker.on('dragend', () => {
-      this._rallyMarker.setAlpha(0.9);
-      for (const s of this._soldiers) {
-        s._rallyX = this._rallyX;
-        s._rallyY = this._rallyY;
-      }
-    });
+    }).setOrigin(0.5).setDepth(6).setAlpha(0.7);
   }
 
   setRally(x, y) {
@@ -404,6 +381,7 @@ export class Soldier extends Phaser.GameObjects.Sprite {
       this._target = null;
     }
     this._barBg?.destroy(); this._barFg?.destroy();
+    if (!this.anims) { this.destroy(); return; }
     this.play('soldier_die');
     this.scene?.tweens.add({ targets: this, alpha: 0, delay: 450, duration: 250,
       onComplete: () => this.destroy() });

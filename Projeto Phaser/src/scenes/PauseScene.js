@@ -63,35 +63,39 @@ export default class PauseScene extends Phaser.Scene {
     this.clearObjs();
     const cx = this.cx, cy = this.cy;
 
-    this.drawPanel(cx - 240, cy - 250, 480, 520, 0x42a5f5);
-    this._objs.push(this.add.text(cx, cy - 205, '⚙ ' + I18n.t('options.title'), {
+    this.drawPanel(cx - 240, cy - 268, 480, 556, 0x42a5f5);
+    this._objs.push(this.add.text(cx, cy - 222, '⚙ ' + I18n.t('options.title'), {
       fontFamily: 'Georgia, serif', fontSize: '34px', color: '#42a5f5',
       stroke: '#000', strokeThickness: 3
     }).setOrigin(0.5));
 
     this._objs.push(makeToggle(this, {
-      x: cx, y: cy - 150, label: I18n.t('options.music'), initial: Settings.musicOn,
+      x: cx, y: cy - 165, label: I18n.t('options.music'), initial: Settings.musicOn,
       onChange: (v) => { Settings.setMusic(v); if (v && this.gameScene) Settings.playMusic(this.gameScene, 'music_battle'); }
     }));
     this._objs.push(makeToggle(this, {
-      x: cx, y: cy - 95, label: I18n.t('options.sfx'), initial: Settings.sfxOn,
+      x: cx, y: cy - 110, label: I18n.t('options.sfx'), initial: Settings.sfxOn,
       onChange: (v) => Settings.setSfx(v)
     }));
+    this._objs.push(makeToggle(this, {
+      x: cx, y: cy - 55, label: I18n.t('options.dmg_numbers'), initial: Settings.dmgNumbers,
+      onChange: (v) => Settings.setDmgNumbers(v)
+    }));
     this._objs.push(makeSlider(this, {
-      x: cx, y: cy - 35, label: I18n.t('options.music') + ' Vol',
+      x: cx, y: cy + 5, label: I18n.t('options.music') + ' Vol',
       initial: Settings.musicVolume, onChange: (v) => Settings.setMusicVolume(v)
     }));
     this._objs.push(makeSlider(this, {
-      x: cx, y: cy + 30, label: I18n.t('options.sfx') + ' Vol',
+      x: cx, y: cy + 65, label: I18n.t('options.sfx') + ' Vol',
       initial: Settings.sfxVolume, onChange: (v) => Settings.setSfxVolume(v)
     }));
 
-    this._objs.push(this.add.text(cx - 180, cy + 95, I18n.t('options.language'), {
+    this._objs.push(this.add.text(cx - 180, cy + 128, I18n.t('options.language'), {
       fontFamily: 'Georgia, serif', fontSize: '20px', color: '#d4a56a'
     }).setOrigin(0, 0.5));
 
     this._objs.push(makeLangSelector(this, {
-      x: cx + 20, y: cy + 95, langs: I18n.availableLangs(), current: I18n.getLang(),
+      x: cx + 20, y: cy + 128, langs: I18n.availableLangs(), current: I18n.getLang(),
       onChange: (lang) => {
         I18n.setLang(lang);
         this._langChanged = true;
@@ -100,7 +104,7 @@ export default class PauseScene extends Phaser.Scene {
     }));
 
     this._objs.push(makeButton(this, {
-      x: cx, y: cy + 200, label: '← ' + I18n.t('options.back'),
+      x: cx, y: cy + 210, label: '← ' + I18n.t('options.back'),
       onClick: () => this.buildMainMenu(), color: '#c8960c'
     }));
   }

@@ -20,15 +20,15 @@ export default class OptionsScene extends Phaser.Scene {
         Phaser.Math.FloatBetween(0.2, 0.7));
     }
 
-    // Painel central
+    // Painel central (altura expandida para 6 opções)
     const panel = this.add.graphics();
     panel.fillStyle(0x1a0f00, 0.95);
-    panel.fillRoundedRect(340, 100, 600, 500, 12);
+    panel.fillRoundedRect(340, 88, 600, 558, 12);
     panel.lineStyle(2, 0xc8960c, 0.8);
-    panel.strokeRoundedRect(340, 100, 600, 500, 12);
+    panel.strokeRoundedRect(340, 88, 600, 558, 12);
 
     // Título
-    this.add.text(640, 150, I18n.t('options.title'), {
+    this.add.text(640, 138, I18n.t('options.title'), {
       fontFamily: 'Georgia, serif', fontSize: '40px',
       color: '#c8960c', stroke: '#000', strokeThickness: 4
     }).setOrigin(0.5);
@@ -36,34 +36,41 @@ export default class OptionsScene extends Phaser.Scene {
     // Linha decorativa
     const g = this.add.graphics();
     g.lineStyle(1, 0xc8960c, 0.4);
-    g.lineBetween(360, 185, 920, 185);
+    g.lineBetween(360, 176, 920, 176);
 
-    let rowY = 240;
+    let rowY = 228;
+    const STEP = 70;
 
     // ─── MÚSICA ───────────────────────────────────────────────────────────────
     this.addToggleRow(rowY, I18n.t('options.music'), Settings.musicOn, (val) => {
       Settings.setMusic(val);
       if (!val) Settings.stopMusic(); else Settings.playMusic(this, 'sfx_wave_start');
     });
-    rowY += 80;
+    rowY += STEP;
 
     // ─── SFX ──────────────────────────────────────────────────────────────────
     this.addToggleRow(rowY, I18n.t('options.sfx'), Settings.sfxOn, (val) => {
       Settings.setSfx(val);
     });
-    rowY += 80;
+    rowY += STEP;
+
+    // ─── NÚMEROS DE DANO ──────────────────────────────────────────────────────
+    this.addToggleRow(rowY, I18n.t('options.dmg_numbers'), Settings.dmgNumbers, (val) => {
+      Settings.setDmgNumbers(val);
+    });
+    rowY += STEP;
 
     // ─── VOLUME MÚSICA ────────────────────────────────────────────────────────
     this.addSliderRow(rowY, I18n.t('options.music') + ' Vol', Settings.musicVolume, (val) => {
       Settings.setMusicVolume(val);
     });
-    rowY += 80;
+    rowY += STEP;
 
     // ─── VOLUME SFX ───────────────────────────────────────────────────────────
     this.addSliderRow(rowY, I18n.t('options.sfx') + ' Vol', Settings.sfxVolume, (val) => {
       Settings.setSfxVolume(val);
     });
-    rowY += 80;
+    rowY += STEP;
 
     // ─── LÍNGUA ───────────────────────────────────────────────────────────────
     this.add.text(400, rowY, I18n.t('options.language'), {
@@ -86,10 +93,10 @@ export default class OptionsScene extends Phaser.Scene {
         this.scene.restart();
       });
     });
-    rowY += 80;
+    rowY += STEP;
 
     // ─── BOTÃO VOLTAR ─────────────────────────────────────────────────────────
-    this.createBackBtn(640, rowY);
+    this.createBackBtn(640, rowY + 10);
   }
 
   addToggleRow(y, label, initialValue, onChange) {

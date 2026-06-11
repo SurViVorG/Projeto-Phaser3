@@ -1,7 +1,7 @@
 # Roadmap — Incrementações Futuras
 
 Plano de melhorias ordenado por impacto e necessidade para o jogo.  
-Cada item concluído é marcado com ✅ e a data de implementação.
+Cada item concluído é marcado com ✅.
 
 ---
 
@@ -9,10 +9,10 @@ Cada item concluído é marcado com ✅ e a data de implementação.
 
 | # | Funcionalidade | Estado | Notas |
 |---|---------------|--------|-------|
-| 1.1 | **Animações de sprite** nos inimigos, torres e soldados via spritesheets procedurais | ✅ Concluído (2026-06-08) | 12 inimigos com walk 4 frames + flip; 12 torres procedurais distintas por tipo/nível; soldados com idle/walk/attack/die animado |
-| 1.2 | **Feedback de dano nos inimigos** — números a flutuar ao receber dano (como o `+Xg` de ouro) | ⬜ Pendente | `floatText` já existe na GameScene; reutilizar com cor vermelha |
+| 1.1 | **Animações de sprite** nos inimigos, torres e soldados via spritesheets procedurais | ✅ Concluído | 12 inimigos com walk 4 frames + flip; 12 torres procedurais distintas por tipo/nível; soldados com idle/walk/attack/die animado |
+| 1.2 | **Feedback de dano nos inimigos** — números a flutuar ao receber dano (como o `+Xg` de ouro) | ✅ Concluído | Cor vermelha (dano físico) / roxa (dano mágico); toggle nas Opções para desligar; rally via menu em vez de arrastar no mapa |
 | 1.3 | **Sistema de estrelas com critérios definidos** — ★★★ sem vidas perdidas · ★★ ≤ 5 vidas · ★ completou | ⬜ Pendente | Sistema de estrelas já existe no MapScene mas nunca é atribuído |
-| 1.4 | **Prévia da próxima onda** — seta pulsante no portal de entrada; hover mostra tooltip com inimigos | ✅ Concluído (2026-06-08) | Seta ▶ animada após cada onda concluída; tooltip com cor/nome/contagem de cada grupo; destrói ao iniciar a onda; guarda `_gameEnded` para evitar duplo endGame |
+| 1.4 | **Prévia da próxima onda** — seta pulsante no portal de entrada; hover mostra tooltip com inimigos | ✅ Concluído | Seta ▶ animada após cada onda concluída; tooltip com cor/nome/contagem de cada grupo; destrói ao iniciar a onda; guarda `_gameEnded` para evitar duplo endGame |
 
 ---
 

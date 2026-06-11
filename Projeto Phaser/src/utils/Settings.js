@@ -6,8 +6,9 @@ class Settings {
   constructor() {
     this.musicVolume = parseFloat(localStorage.getItem('kr_music') ?? '0.4');
     this.sfxVolume   = parseFloat(localStorage.getItem('kr_sfx')   ?? '0.7');
-    this.musicOn     = (localStorage.getItem('kr_musicOn') ?? 'true') === 'true';
-    this.sfxOn       = (localStorage.getItem('kr_sfxOn')   ?? 'true') === 'true';
+    this.musicOn     = (localStorage.getItem('kr_musicOn')    ?? 'true') === 'true';
+    this.sfxOn       = (localStorage.getItem('kr_sfxOn')      ?? 'true') === 'true';
+    this.dmgNumbers  = (localStorage.getItem('kr_dmgNumbers') ?? 'true') === 'true';
     this._currentMusic = null;
     this._currentKey   = null;
   }
@@ -20,6 +21,10 @@ class Settings {
   setSfx(on) {
     this.sfxOn = on;
     localStorage.setItem('kr_sfxOn', String(on));
+  }
+  setDmgNumbers(on) {
+    this.dmgNumbers = on;
+    localStorage.setItem('kr_dmgNumbers', String(on));
   }
   setMusicVolume(v) {
     this.musicVolume = v;
