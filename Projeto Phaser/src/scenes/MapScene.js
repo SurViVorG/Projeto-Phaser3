@@ -77,6 +77,21 @@ export default class MapScene extends Phaser.Scene {
       this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('MenuScene'));
     });
 
+    // Botão enciclopédia
+    const encyc = this.add.text(W - 160, 680, '📖 ' + I18n.t('encyclopedia.title'), {
+      fontFamily: 'Georgia, serif', fontSize: '19px',
+      color: '#d4a56a', backgroundColor: '#1a0f00',
+      padding: { x: 12, y: 6 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    encyc.on('pointerover', () => encyc.setColor('#f0c040'));
+    encyc.on('pointerout',  () => encyc.setColor('#d4a56a'));
+    encyc.on('pointerdown', () => {
+      Settings.playSfx(this, 'sfx_btn');
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () =>
+        this.scene.start('EncyclopediaScene', { from: 'MapScene' }));
+    });
+
     // Seletor de língua
     this.createLangSelector(W - 100, 30);
   }

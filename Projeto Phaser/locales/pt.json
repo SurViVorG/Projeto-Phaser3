@@ -54,10 +54,23 @@
   },
   "enemies": {
     "goblin": "Goblin",
+    "goblin_fast": "Goblin Veloz",
     "orc": "Orc",
+    "orc_armored": "Orc Armado",
     "troll": "Troll",
+    "harpy": "Harpia",
+    "golem": "Golem",
     "dark_knight": "Cavaleiro Negro",
-    "demon": "Demônio"
+    "necromancer": "Necromante",
+    "wyvern": "Wyvern",
+    "demon": "Demônio",
+    "lich": "Lich"
+  },
+  "encyclopedia": {
+    "title": "Enciclopédia",
+    "towers": "Torres",
+    "enemies": "Inimigos",
+    "powers": "Poderes"
   },
   "gameover": {
     "title": "Derrota!",

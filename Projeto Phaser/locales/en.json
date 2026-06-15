@@ -54,10 +54,23 @@
   },
   "enemies": {
     "goblin": "Goblin",
+    "goblin_fast": "Fast Goblin",
     "orc": "Orc",
+    "orc_armored": "Armored Orc",
     "troll": "Troll",
+    "harpy": "Harpy",
+    "golem": "Golem",
     "dark_knight": "Dark Knight",
-    "demon": "Demon"
+    "necromancer": "Necromancer",
+    "wyvern": "Wyvern",
+    "demon": "Demon",
+    "lich": "Lich"
+  },
+  "encyclopedia": {
+    "title": "Encyclopedia",
+    "towers": "Towers",
+    "enemies": "Enemies",
+    "powers": "Powers"
   },
   "gameover": {
     "title": "Defeat!",

@@ -703,7 +703,7 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(victory ? 'VictoryScene' : 'GameOverScene',
-        { score: this.score, level: this.level });
+        { score: this.score, level: this.level, lives: this.lives });
     });
   }
 

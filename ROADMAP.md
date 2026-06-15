@@ -11,7 +11,7 @@ Cada item concluído é marcado com ✅.
 |---|---------------|--------|-------|
 | 1.1 | **Animações de sprite** nos inimigos, torres e soldados via spritesheets procedurais | ✅ Concluído | 12 inimigos com walk 4 frames + flip; 12 torres procedurais distintas por tipo/nível; soldados com idle/walk/attack/die animado |
 | 1.2 | **Feedback de dano nos inimigos** — números a flutuar ao receber dano (como o `+Xg` de ouro) | ✅ Concluído | Cor vermelha (dano físico) / roxa (dano mágico); toggle nas Opções para desligar; rally via menu em vez de arrastar no mapa |
-| 1.3 | **Sistema de estrelas com critérios definidos** — ★★★ sem vidas perdidas · ★★ ≤ 5 vidas · ★ completou | ⬜ Pendente | Sistema de estrelas já existe no MapScene mas nunca é atribuído |
+| 1.3 | **Sistema de estrelas com critérios definidos** — ★★★ sem vidas perdidas · ★★ ≤ 5 vidas · ★ completou | ✅ Concluído | Critério baseado em vidas perdidas; vitória mostra vidas restantes e critério atingido; enciclopédia 📖 com 3 abas (Torres · Inimigos · Poderes) acessível no MapScene |
 | 1.4 | **Prévia da próxima onda** — seta pulsante no portal de entrada; hover mostra tooltip com inimigos | ✅ Concluído | Seta ▶ animada após cada onda concluída; tooltip com cor/nome/contagem de cada grupo; destrói ao iniciar a onda; guarda `_gameEnded` para evitar duplo endGame |
 
 ---
