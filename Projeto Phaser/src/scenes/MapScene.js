@@ -156,14 +156,77 @@ export default class MapScene extends Phaser.Scene {
       });
       container.on('pointerdown', () => {
         Settings.playSfx(this, 'sfx_btn');
-        this.cameras.main.fadeOut(400, 0, 0, 0);
-        this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('GameScene', { level: lvl.id });
-        });
+        this._showLevelModal(lvl);
       });
     } else {
       container.on('pointerdown', () => this.showLockedTooltip(lvl.x, lvl.y - 80));
     }
+  }
+
+  _showLevelModal(lvl) {
+    this._closeModal();
+    const W = 1280, H = 720;
+    const mW = 420, mH = 250;
+    const cx = W / 2, cy = H / 2;
+
+    const backdrop = this.add.rectangle(cx, cy, W, H, 0x000000, 0.6)
+      .setDepth(30).setInteractive();
+    backdrop.on('pointerdown', () => this._closeModal());
+
+    const bg = this.add.graphics().setDepth(31);
+    bg.fillStyle(0x0d0d1a, 0.97);
+    bg.fillRoundedRect(cx - mW / 2, cy - mH / 2, mW, mH, 12);
+    bg.lineStyle(2, 0xc8960c, 0.8);
+    bg.strokeRoundedRect(cx - mW / 2, cy - mH / 2, mW, mH, 12);
+
+    const displayName = I18n.getLang() === 'en' ? (lvl.nameEN || lvl.name) : lvl.name;
+    const title = this.add.text(cx, cy - mH / 2 + 30,
+      'Nível ' + lvl.id + '  —  ' + displayName, {
+      fontFamily: 'Georgia, serif', fontSize: '18px', color: '#c8960c'
+    }).setOrigin(0.5).setDepth(31);
+
+    const startBtn = this.add.text(cx, cy - 22, '▶  Iniciar Nível', {
+      fontFamily: 'Georgia, serif', fontSize: '22px',
+      color: '#00e676', backgroundColor: '#0d2b0d',
+      padding: { x: 28, y: 12 }
+    }).setOrigin(0.5).setDepth(31).setInteractive({ useHandCursor: true });
+    startBtn.on('pointerover', () => startBtn.setColor('#69f0ae'));
+    startBtn.on('pointerout',  () => startBtn.setColor('#00e676'));
+    startBtn.on('pointerdown', () => {
+      this._closeModal();
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () =>
+        this.scene.start('GameScene', { level: lvl.id }));
+    });
+
+    const sandboxBtn = this.add.text(cx, cy + 52, '⚙  Modo Sandbox', {
+      fontFamily: 'Georgia, serif', fontSize: '22px',
+      color: '#fdd835', backgroundColor: '#1a1500',
+      padding: { x: 28, y: 12 }
+    }).setOrigin(0.5).setDepth(31).setInteractive({ useHandCursor: true });
+    sandboxBtn.on('pointerover', () => sandboxBtn.setColor('#fff176'));
+    sandboxBtn.on('pointerout',  () => sandboxBtn.setColor('#fdd835'));
+    sandboxBtn.on('pointerdown', () => {
+      this._closeModal();
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () =>
+        this.scene.start('GameScene', { level: lvl.id, sandbox: true }));
+    });
+
+    const cancelTxt = this.add.text(cx, cy + mH / 2 - 18, '✕ Cancelar', {
+      fontFamily: 'monospace', fontSize: '13px', color: '#666'
+    }).setOrigin(0.5).setDepth(31).setInteractive({ useHandCursor: true });
+    cancelTxt.on('pointerover', () => cancelTxt.setColor('#aaa'));
+    cancelTxt.on('pointerout',  () => cancelTxt.setColor('#666'));
+    cancelTxt.on('pointerdown', () => this._closeModal());
+
+    this._modal = [backdrop, bg, title, startBtn, sandboxBtn, cancelTxt];
+  }
+
+  _closeModal() {
+    if (!this._modal) return;
+    this._modal.forEach(o => { try { o.destroy(); } catch (_) {} });
+    this._modal = null;
   }
 
   showLockedTooltip(x, y) {

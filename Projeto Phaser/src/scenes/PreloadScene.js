@@ -64,6 +64,7 @@ export default class PreloadScene extends Phaser.Scene {
   create() {
     this.generateEnemySpritesheets();
     this.generateTowerTextures();
+    this.generateTowerLevel4Textures();
     this.generateSoldierSpritesheet();
     this.generateUITextures();
     this.scene.start('MenuScene');
@@ -736,5 +737,242 @@ export default class PreloadScene extends Phaser.Scene {
     g.generateTexture('particle_spark', 8, 8); g.destroy();
     g = mk(); g.fillStyle(0xb71c1c); g.fillCircle(4,4,3);
     g.generateTexture('particle_blood', 8, 8); g.destroy();
+
+    // Mina terrestre
+    g = mk();
+    g.fillStyle(0x333300); g.fillCircle(9,9,8);
+    g.lineStyle(1.5, 0xddcc00); g.strokeCircle(9,9,8);
+    g.fillStyle(0xddcc00);
+    g.fillRect(8,1,2,4); g.fillRect(8,14,2,4);
+    g.fillRect(1,8,4,2); g.fillRect(14,8,4,2);
+    g.generateTexture('mine', 18, 18); g.destroy();
+  }
+
+  /**
+   * Gera texturas para os 4 caminhos de elite (nível IV A e B) de cada torre.
+   */
+  generateTowerLevel4Textures() {
+    const S = 48, cx = 24;
+    const mk = (key, fn) => {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = S;
+      fn(cv.getContext('2d'));
+      if (this.textures.exists(key)) this.textures.remove(key);
+      this.textures.addCanvas(key, cv);
+    };
+
+    // ── BARRACAS 4A — Cavaleiros (dourado, imponente) ─────────────────────
+    mk('tower_barracks_4a', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.22)';
+      ctx.beginPath(); ctx.ellipse(cx,45,16,3,0,0,Math.PI*2); ctx.fill();
+      // Torres laterais
+      ctx.fillStyle='#686868'; ctx.fillRect(0,16,10,28); ctx.fillRect(38,16,10,28);
+      // Ameias
+      [0,4,8,38,42,46].forEach(x => { ctx.fillStyle='#505050'; ctx.fillRect(x,12,3,6); });
+      // Corpo central
+      ctx.fillStyle='#5a5a5a'; ctx.fillRect(8,14,32,30);
+      // Textura de pedra
+      ctx.strokeStyle='#444'; ctx.lineWidth=1;
+      for (let r=0;r<4;r++) { const y=17+r*6,off=(r%2)*4; for (let x=10+off;x<38;x+=8) ctx.strokeRect(x,y,7,5); }
+      // Friso dourado
+      ctx.fillStyle='#c8960c'; ctx.fillRect(8,14,32,3);
+      ctx.fillStyle='#f0c040'; ctx.fillRect(8,16,32,1);
+      // Cruz dourada na porta
+      ctx.fillStyle='#1a0a00'; ctx.beginPath(); ctx.arc(cx,37,5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-5,37,10,7);
+      ctx.strokeStyle='#c8960c'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx,32); ctx.lineTo(cx,43); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-4,36); ctx.lineTo(cx+4,36); ctx.stroke();
+      // Bandeira dourada
+      ctx.strokeStyle='#c8960c'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+1,12); ctx.stroke();
+      ctx.fillStyle='#f0c040';
+      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+12,5); ctx.lineTo(cx+1,8); ctx.closePath(); ctx.fill();
+    });
+
+    // ── BARRACAS 4B — Assassinos (sombrio, negro) ─────────────────────────
+    mk('tower_barracks_4b', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.3)';
+      ctx.beginPath(); ctx.ellipse(cx,45,16,3,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#1a1a22'; ctx.fillRect(0,16,10,28); ctx.fillRect(38,16,10,28);
+      [0,4,8,38,42,46].forEach(x => { ctx.fillStyle='#111118'; ctx.fillRect(x,12,3,6); });
+      ctx.fillStyle='#222230'; ctx.fillRect(8,14,32,30);
+      ctx.strokeStyle='#333344'; ctx.lineWidth=1;
+      for (let r=0;r<4;r++) { const y=17+r*6,off=(r%2)*4; for (let x=10+off;x<38;x+=8) ctx.strokeRect(x,y,7,5); }
+      ctx.fillStyle='#4a0000'; ctx.fillRect(8,14,32,3);
+      // Janelas violeta
+      ctx.fillStyle='#7700cc';
+      ctx.fillRect(12,20,4,6); ctx.fillRect(cx-2,20,4,6); ctx.fillRect(32,20,4,6);
+      // Porta sombria
+      ctx.fillStyle='#050508'; ctx.beginPath(); ctx.arc(cx,37,5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-5,37,10,7);
+      // Punhal decorativo
+      ctx.strokeStyle='#9944cc'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx,32); ctx.lineTo(cx-4,38); ctx.lineTo(cx+4,38); ctx.lineTo(cx,32); ctx.stroke();
+      // Bandeira roxa
+      ctx.strokeStyle='#5500aa'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+1,12); ctx.stroke();
+      ctx.fillStyle='#7700cc';
+      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+12,5); ctx.lineTo(cx+1,8); ctx.closePath(); ctx.fill();
+    });
+
+    // ── ARCHER 4A — Ranger (alcance longo, verde esmeralda) ──────────────
+    mk('tower_archer_4a', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.2)';
+      ctx.beginPath(); ctx.ellipse(cx,44,16,3,0,0,Math.PI*2); ctx.fill();
+      // Base alargada
+      ctx.fillStyle='#405030'; ctx.beginPath(); ctx.arc(cx,32,16,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#2a4020'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,32,16,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(cx,32,10,0,Math.PI*2); ctx.stroke();
+      // Corpo torre
+      ctx.fillStyle='#506040';
+      ctx.beginPath(); ctx.moveTo(cx-9,32); ctx.lineTo(cx-6,14); ctx.lineTo(cx+6,14); ctx.lineTo(cx+9,32); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#2a4020'; ctx.lineWidth=1; ctx.stroke();
+      // Arco grande (ranger)
+      ctx.strokeStyle='#90c060'; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.arc(cx, 14, 11, -0.9, -(Math.PI - 0.9), false); ctx.stroke();
+      // Flecha longa
+      ctx.strokeStyle='#d0e040'; ctx.lineWidth=2.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx,14); ctx.lineTo(cx,1); ctx.stroke();
+      ctx.fillStyle='#d0e040';
+      ctx.beginPath(); ctx.moveTo(cx,1); ctx.lineTo(cx-4,6); ctx.lineTo(cx+4,6); ctx.closePath(); ctx.fill();
+      // Gemas verdes
+      ctx.fillStyle='#00e676';
+      ctx.beginPath(); ctx.arc(cx,14,3,0,Math.PI*2); ctx.fill();
+      for (let a=0;a<Math.PI*2;a+=Math.PI/3) ctx.fillRect(cx+14*Math.cos(a)-1.5,32+14*Math.sin(a)-1.5,3,3);
+    });
+
+    // ── ARCHER 4B — Sniper (cano longo, prateado) ────────────────────────
+    mk('tower_archer_4b', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.2)';
+      ctx.beginPath(); ctx.ellipse(cx,44,14,3,0,0,Math.PI*2); ctx.fill();
+      // Base estreita e alta
+      ctx.fillStyle='#5a5a5a'; ctx.beginPath(); ctx.arc(cx,32,13,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#3a3a3a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,32,13,0,Math.PI*2); ctx.stroke();
+      // Cano de sniper fino e longo
+      ctx.fillStyle='#484848';
+      ctx.fillRect(cx-3,10,6,22);
+      ctx.fillStyle='#3a3a3a'; ctx.lineWidth=1;
+      for (let y=12;y<28;y+=5) ctx.fillRect(cx-4,y,8,2);
+      // Mira (scope)
+      ctx.fillStyle='#222';
+      ctx.beginPath(); ctx.arc(cx,9,5,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#888'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(cx,9,5,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='#aaa'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(cx-5,9); ctx.lineTo(cx+5,9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,4); ctx.lineTo(cx,14); ctx.stroke();
+      // Detalhe prateado
+      ctx.fillStyle='#c0c0c0';
+      ctx.beginPath(); ctx.arc(cx,9,1.5,0,Math.PI*2); ctx.fill();
+    });
+
+    // ── MAGE 4A — Mago de Gelo (cristais de gelo, azul) ──────────────────
+    mk('tower_mage_4a', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.2)';
+      ctx.beginPath(); ctx.ellipse(cx,44,15,3,0,0,Math.PI*2); ctx.fill();
+      // Base gelada
+      ctx.fillStyle='#1a3a5a'; ctx.beginPath(); ctx.arc(cx,30,15,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#4488cc'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,30,15,0,Math.PI*2); ctx.stroke();
+      // Cristais internos
+      ctx.strokeStyle='#88ccff22'; ctx.lineWidth=1;
+      for (let a=0;a<Math.PI*2;a+=Math.PI/2)
+        ctx.fillRect(cx+9*Math.cos(a)-1.5,30+9*Math.sin(a)-1.5,3,3);
+      // Cajado gelado
+      ctx.strokeStyle='#88bbdd'; ctx.lineWidth=2.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx,17); ctx.lineTo(cx,5); ctx.stroke();
+      // Cristal de gelo no topo
+      ctx.fillStyle='#88ddff88';
+      ctx.beginPath(); ctx.arc(cx,5,7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#aaeeff';
+      ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx-4,6); ctx.lineTo(cx+4,6); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx,10); ctx.lineTo(cx-3,5); ctx.lineTo(cx+3,5); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#ffffff66'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(cx-6,4); ctx.lineTo(cx+6,4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,1); ctx.lineTo(cx,9); ctx.stroke();
+    });
+
+    // ── MAGE 4B — Necromante (crânio, roxo escuro) ───────────────────────
+    mk('tower_mage_4b', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(cx,44,15,3,0,0,Math.PI*2); ctx.fill();
+      // Base sombria
+      ctx.fillStyle='#1a0a2a'; ctx.beginPath(); ctx.arc(cx,30,15,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#6600cc'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,30,15,0,Math.PI*2); ctx.stroke();
+      // Brilho fantasma
+      ctx.fillStyle='#33006688';
+      for (let a=0;a<Math.PI*2;a+=Math.PI/2)
+        ctx.fillRect(cx+9*Math.cos(a)-2,30+9*Math.sin(a)-2,4,4);
+      // Cajado roxo
+      ctx.strokeStyle='#8822aa'; ctx.lineWidth=2.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(cx,17); ctx.lineTo(cx,6); ctx.stroke();
+      // Crânio no topo
+      ctx.fillStyle='#cccccc';
+      ctx.beginPath(); ctx.arc(cx,6,5.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#1a0a2a';
+      ctx.beginPath(); ctx.arc(cx-1.8,5,1.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+1.8,5,1.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#7700cc';
+      ctx.beginPath(); ctx.arc(cx-1.8,5,0.8,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+1.8,5,0.8,0,Math.PI*2); ctx.fill();
+      // Dentes
+      ctx.strokeStyle='#aaa'; ctx.lineWidth=0.8;
+      for (let t=-2;t<=2;t++) ctx.strokeRect(cx+t*2-0.5,9,1.5,2);
+      // Aura necrótica
+      ctx.strokeStyle='#55009988'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(cx,6,8,0,Math.PI*2); ctx.stroke();
+    });
+
+    // ── ARTILLERY 4A — Foguete (míssil, cinza escuro) ────────────────────
+    mk('tower_artillery_4a', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.22)';
+      ctx.beginPath(); ctx.ellipse(cx,44,17,4,0,0,Math.PI*2); ctx.fill();
+      // Base lançador
+      ctx.fillStyle='#2a2a2a'; ctx.beginPath(); ctx.arc(cx,32,17,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,32,17,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,32,11,0,Math.PI*2); ctx.stroke();
+      // Tubo de lançamento
+      const tw = 7;
+      ctx.fillStyle='#404040'; ctx.fillRect(cx-tw/2,8,tw,24);
+      ctx.fillStyle='#1a1a1a';
+      for (let y=10;y<28;y+=5) ctx.fillRect(cx-tw/2-1,y,tw+2,2);
+      // Foguete
+      ctx.fillStyle='#c0c0c0';
+      ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx-4,10); ctx.lineTo(cx+4,10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#888'; ctx.fillRect(cx-4,10,8,10);
+      // Aletas
+      ctx.fillStyle='#cc3300';
+      ctx.beginPath(); ctx.moveTo(cx-4,18); ctx.lineTo(cx-9,24); ctx.lineTo(cx-4,24); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx+4,18); ctx.lineTo(cx+9,24); ctx.lineTo(cx+4,24); ctx.closePath(); ctx.fill();
+      // Chama
+      ctx.fillStyle='#ff5500'; ctx.beginPath(); ctx.arc(cx,25,3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffaa00'; ctx.beginPath(); ctx.arc(cx,25,1.5,0,Math.PI*2); ctx.fill();
+      // Parafusos na base
+      ctx.fillStyle='#606060';
+      for (let a=0;a<Math.PI*2;a+=Math.PI/3)
+        ctx.fillRect(cx+17*Math.cos(a)-1.5,32+17*Math.sin(a)-1.5,3,3);
+    });
+
+    // ── ARTILLERY 4B — Minas (bunker compacto, verde militar) ────────────
+    mk('tower_artillery_4b', ctx => {
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(cx,45,18,4,0,0,Math.PI*2); ctx.fill();
+      // Bunker baixo
+      ctx.fillStyle='#3a4830'; ctx.beginPath(); ctx.arc(cx,34,17,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#2a3820'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,34,17,0,Math.PI*2); ctx.stroke();
+      // Cúpula do bunker
+      ctx.fillStyle='#4a5a38'; ctx.fillRect(cx-12,20,24,16);
+      ctx.fillStyle='#3a4828'; ctx.strokeStyle='#2a3820'; ctx.lineWidth=1;
+      for (let r=0;r<3;r++) { const y=22+r*5,off=(r%2)*3; for (let x=cx-10+off;x<cx+10;x+=6) ctx.strokeRect(x,y,5,4); }
+      // Símbolo perigo
+      ctx.fillStyle='#ddcc00'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+      ctx.fillText('⚡', cx, 32);
+      // Slot de minas no lado
+      ctx.fillStyle='#222810'; ctx.fillRect(cx-8,36,5,8); ctx.fillRect(cx+3,36,5,8);
+      ctx.strokeStyle='#ddcc00'; ctx.lineWidth=1;
+      ctx.strokeRect(cx-8,36,5,8); ctx.strokeRect(cx+3,36,5,8);
+      // Antena
+      ctx.strokeStyle='#88aa44'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx+8,20); ctx.lineTo(cx+12,10); ctx.stroke();
+      ctx.fillStyle='#88aa44'; ctx.beginPath(); ctx.arc(cx+12,10,2,0,Math.PI*2); ctx.fill();
+    });
   }
 }

@@ -387,13 +387,19 @@ export default class HUD {
   }
 
   // ── PAINEL DE TORRE ───────────────────────────────────────────────────────────
-  showTowerPanel(tower, onUpgrade, onSell) {
+  showTowerPanel(tower, onUpgrade, onSell, onChoosePath = null) {
     this.hideTowerPanel();
-    const scene = this.scene;
-    const def   = TOWER_DATA[tower.towerType];
-    const stats = tower.stats;
+    const scene      = this.scene;
+    const def        = TOWER_DATA[tower.towerType];
+    const stats      = tower.stats;
     const isBarracks = tower.towerType === 'barracks';
-    const W = 200, H = isBarracks ? 252 : 220;
+    const hasPaths   = tower.hasPaths?.() && !!onChoosePath;
+
+    const W = 200;
+    const H = isBarracks
+      ? (hasPaths ? 336 : 252)
+      : (hasPaths ? 304 : 220);
+
     const tx = Math.min(tower.x + 64, 1100);
     const ty = Math.max(tower.y - 100, 70);
 
@@ -406,29 +412,38 @@ export default class HUD {
     panel.add(bg);
 
     // Título
-    panel.add(scene.add.text(W / 2, 14,
-      tower.towerType.toUpperCase() + ' ' + stats.label, {
-      fontFamily: 'Georgia, serif', fontSize: '15px', color: '#c8960c'
+    const titleLabel = tower.level === 3 && tower.chosenPath
+      ? tower.towerType.toUpperCase() + ' ★ ' + (def.paths[tower.chosenPath]?.label || '')
+      : tower.towerType.toUpperCase() + ' ' + stats.label;
+    panel.add(scene.add.text(W / 2, 14, titleLabel, {
+      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#c8960c'
     }).setOrigin(0.5));
 
     // Stats
     const lines = [
-      stats.damage   ? I18n.t('towers.damage')  + ': ' + stats.damage : null,
+      stats.damage    ? I18n.t('towers.damage')  + ': ' + stats.damage : null,
       I18n.t('towers.range')   + ': ' + stats.range,
-      stats.fireRate ? I18n.t('towers.speed')   + ': ' + (1000 / stats.fireRate).toFixed(1) + '/s' : null,
-      stats.soldiers ? 'Soldados: ' + stats.soldiers : null,
-      stats.splashRadius ? 'Splash: ' + stats.splashRadius : null
+      stats.fireRate  ? I18n.t('towers.speed')   + ': ' + (1000 / stats.fireRate).toFixed(1) + '/s' : null,
+      stats.soldiers  ? 'Soldados: ' + stats.soldiers : null,
+      stats.splashRadius ? 'Splash: ' + stats.splashRadius : null,
+      stats.slowField ? '❄ Campo de slow em área' : null,
+      stats.piercing  ? '↠ Flechas perfurantes'   : null,
+      stats.ignoreArmor ? '⚔ Ignora armadura'     : null,
+      stats.hitsFlying  ? '🚀 Atinge voadores'    : null,
+      stats.necromancy  ? '☠ Revive inimigos'     : null,
+      stats.maxMines    ? `💣 Minas: ${tower._mines?.length ?? 0}/${stats.maxMines}` : null
     ].filter(Boolean);
 
     lines.forEach((line, i) => {
-      panel.add(scene.add.text(10, 36 + i * 20, line, {
-        fontFamily: 'monospace', fontSize: '11px', color: '#aaa'
+      panel.add(scene.add.text(10, 36 + i * 18, line, {
+        fontFamily: 'monospace', fontSize: '10px', color: '#aaa'
       }));
     });
 
     // Rally (barracks only)
     if (isBarracks) {
-      const rallyBtn = scene.add.text(W / 2, H - 90,
+      const rallyY = hasPaths ? H - 204 : H - 90;
+      const rallyBtn = scene.add.text(W / 2, rallyY,
         '⚑ ' + I18n.t('towers.set_rally'), {
         fontFamily: 'monospace', fontSize: '12px',
         color: '#42a5f5', backgroundColor: '#0d1a2e',
@@ -443,8 +458,40 @@ export default class HUD {
       panel.add(rallyBtn);
     }
 
-    // Upgrade
-    if (tower.canUpgrade()) {
+    // ── Caminho IV (paths A e B) ──────────────────────────────────────────────
+    if (hasPaths) {
+      panel.add(scene.add.text(W / 2, H - 174, '— Escolhe caminho IV —', {
+        fontFamily: 'monospace', fontSize: '9px', color: '#888'
+      }).setOrigin(0.5));
+
+      ['A', 'B'].forEach((key, i) => {
+        const pd    = def.paths[key];
+        const color = key === 'A' ? '#f0c040' : '#42a5f5';
+        const yBtn  = H - 156 + i * 76;
+
+        const pathBtn = scene.add.text(W / 2, yBtn,
+          key + ': ' + pd.label + ' (' + pd.cost + 'g)', {
+          fontFamily: 'monospace', fontSize: '11px',
+          color, backgroundColor: '#0d0d00',
+          padding: { x: 8, y: 5 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        const descTxt = scene.add.text(W / 2, yBtn + 22, pd.description || '', {
+          fontFamily: 'monospace', fontSize: '9px', color: '#999',
+          wordWrap: { width: W - 16 }
+        }).setOrigin(0.5);
+
+        pathBtn.on('pointerover', () => pathBtn.setAlpha(0.75));
+        pathBtn.on('pointerout',  () => pathBtn.setAlpha(1));
+        pathBtn.on('pointerdown', () => {
+          onChoosePath(tower, key);
+          this.hideTowerPanel();
+        });
+        panel.add([pathBtn, descTxt]);
+      });
+
+    // ── Upgrade normal ────────────────────────────────────────────────────────
+    } else if (tower.canUpgrade()) {
       const upCost = tower.upgradeCost();
       const upBtn = scene.add.text(W / 2, H - 58,
         '▲ ' + I18n.t('towers.upgrade') + ' (' + upCost + 'g)', {
@@ -454,15 +501,23 @@ export default class HUD {
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
       upBtn.on('pointerdown', () => { onUpgrade(tower); this.hideTowerPanel(); });
       panel.add(upBtn);
+
+    // ── MAX / caminho já escolhido ────────────────────────────────────────────
     } else {
-      panel.add(scene.add.text(W / 2, H - 58, '✓ MAX', {
-        fontFamily: 'monospace', fontSize: '12px', color: '#fdd835'
+      const maxLabel = tower.chosenPath
+        ? '★ ' + (def.paths?.[tower.chosenPath]?.label || 'ELITE')
+        : '✓ MAX';
+      const maxColor = tower.chosenPath === 'A' ? '#f0c040'
+                     : tower.chosenPath === 'B' ? '#42a5f5'
+                     : '#fdd835';
+      panel.add(scene.add.text(W / 2, H - 58, maxLabel, {
+        fontFamily: 'monospace', fontSize: '12px', color: maxColor
       }).setOrigin(0.5));
     }
 
     // Vender
-    const sv = sellValue(tower.towerType, tower.level);
-    const sellBtn = scene.add.text(W / 2, H - 30,
+    const sv = sellValue(tower.towerType, tower.level, tower.chosenPath);
+    const sellBtn = scene.add.text(W / 2, H - 28,
       '✕ ' + I18n.t('towers.sell') + ' (+' + sv + 'g)', {
       fontFamily: 'monospace', fontSize: '12px',
       color: '#ef5350', backgroundColor: '#2b0d0d',
@@ -470,7 +525,6 @@ export default class HUD {
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     sellBtn.on('pointerdown', () => { onSell(tower); this.hideTowerPanel(); });
     panel.add(sellBtn);
-
 
     // Círculo de range
     this._rangeCircle = scene.add.image(tower.x, tower.y, 'range_circle')

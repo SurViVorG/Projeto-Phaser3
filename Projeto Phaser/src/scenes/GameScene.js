@@ -18,8 +18,9 @@ export default class GameScene extends Phaser.Scene {
 
   init(data) {
     this.level       = data.level || 1;
-    this.gold        = [250, 250, 300, 375][this.level - 1] ?? 250;
-    this.lives       = 20;
+    this._sandbox    = data.sandbox || false;
+    this.gold        = this._sandbox ? 99999 : ([250, 250, 300, 375][this.level - 1] ?? 250);
+    this.lives       = this._sandbox ? 99 : 20;
     this.score       = 0;
     this.waveIndex   = 0;
     this.waveActive  = false;
@@ -119,6 +120,15 @@ export default class GameScene extends Phaser.Scene {
 
     // Mostrar prévia da primeira onda antes do jogador clicar em "Iniciar"
     this._showNextWavePreview(0);
+
+    // Sandbox: ouro e vidas infinitos, painel de spawn manual
+    if (this._sandbox) {
+      this._hud._startBtn.setVisible(false);
+      this._hud._waveText.setText('⚙ SANDBOX');
+      this._hud._fastBtn.setX(870);
+      this._clearNextWavePreview();
+      this._buildSandboxPanel();
+    }
   }
 
   // ── MAPA ────────────────────────────────────────────────────────────────────
@@ -300,8 +310,9 @@ export default class GameScene extends Phaser.Scene {
     if (tower) {
       this._selectedTower = tower;
       this._hud.showTowerPanel(tower,
-        (t) => this.upgradeTower(t),
-        (t) => this.sellTower(t)
+        (t)       => this.upgradeTower(t),
+        (t)       => this.sellTower(t),
+        (t, path) => this.choosePathForTower(t, path)
       );
       return;
     }
@@ -387,8 +398,21 @@ export default class GameScene extends Phaser.Scene {
     this.floatText(tower.x, tower.y - 44, '▲ UP!', '#fdd835');
   }
 
+  choosePathForTower(tower, path) {
+    const pd   = tower.def.paths?.[path];
+    const cost = pd?.cost ?? 0;
+    if (this.gold < cost) {
+      this.floatText(tower.x, tower.y, 'Ouro insuficiente!', '#ef5350');
+      return;
+    }
+    this.spendGold(cost);
+    tower.choosePath(path);
+    this.floatText(tower.x, tower.y - 52, '★ ' + (pd?.label || path) + '!', '#f0c040');
+    this._particles.emitParticleAt(tower.x, tower.y, 18);
+  }
+
   sellTower(tower) {
-    const val = sellValue(tower.towerType, tower.level);
+    const val = sellValue(tower.towerType, tower.level, tower.chosenPath);
     this.addGold(val);
     this.floatText(tower.x, tower.y - 44, '+' + val + 'g', '#00e676');
     const slot = this._slotObjects.find(s => s._tower === tower);
@@ -545,7 +569,7 @@ export default class GameScene extends Phaser.Scene {
     this._hud.setGold(this.gold);
     this._hud.updateGoldState(this.gold);
   }
-  spendGold(v) { this.addGold(-v); }
+  spendGold(v) { if (!this._sandbox) this.addGold(-v); }
 
   addScore(v) {
     this.score += v;
@@ -553,6 +577,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   loseLife(amount = 1) {
+    if (this._sandbox) {
+      this.cameras.main.flash(200, 200, 0, 0, false);
+      return;
+    }
     this.lives -= amount;
     this._hud.setLives(this.lives);
     Settings.playSfx(this, 'sfx_life_lost');
@@ -603,6 +631,14 @@ export default class GameScene extends Phaser.Scene {
     this._hud.setScore(this.score);
     this._hud.setWaveActive(this.waveActive);
     this._hud.updateGoldState(this.gold);
+    if (this._sandbox) {
+      this._sandboxPanelObjects?.forEach(o => { try { o.destroy(); } catch (_) {} });
+      this._sandboxPanelObjects = [];
+      this._hud._startBtn.setVisible(false);
+      this._hud._waveText.setText('⚙ SANDBOX');
+      this._hud._fastBtn.setX(870);
+      this._buildSandboxPanel();
+    }
   }
 
   // ── PRÉVIA DA PRÓXIMA ONDA ────────────────────────────────────────────────────
@@ -696,7 +732,109 @@ export default class GameScene extends Phaser.Scene {
     return container;
   }
 
+  _buildSandboxPanel() {
+    this._sandboxPanelObjects = this._sandboxPanelObjects || [];
+    const track = (o) => { this._sandboxPanelObjects.push(o); return o; };
+
+    const enemyKeys = Object.keys(ENEMY_DATA);
+    const qtys      = [1, 5, 10, 20];
+    let selEnemy = 0, selQty = 0;
+
+    // Fundo do painel
+    track(this.add.rectangle(600, 682, 420, 46, 0x0a0a1a, 0.93)
+      .setDepth(11).setScrollFactor(0)
+      .setStrokeStyle(1, 0xfdd835, 0.3));
+
+    track(this.add.text(410, 682, '⚙', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#fdd835'
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0));
+
+    // ── Seletor de inimigo ─────────────────────────────────────
+    const prevE = track(this.add.text(436, 682, '◀', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#aaa',
+      backgroundColor: '#111', padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setInteractive({ useHandCursor: true }));
+
+    const getColor = (idx) => {
+      const c = ENEMY_DATA[enemyKeys[idx]].color;
+      return '#' + c.toString(16).padStart(6, '0');
+    };
+    const enemyName = track(this.add.text(510, 682,
+      ENEMY_DATA[enemyKeys[0]].label, {
+      fontFamily: 'monospace', fontSize: '11px', color: getColor(0),
+      backgroundColor: '#0a0a22', padding: { x: 6, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setFixedSize(120, 0));
+
+    const nextE = track(this.add.text(582, 682, '▶', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#aaa',
+      backgroundColor: '#111', padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setInteractive({ useHandCursor: true }));
+
+    const updateEnemy = () => {
+      enemyName.setText(ENEMY_DATA[enemyKeys[selEnemy]].label);
+      enemyName.setColor(getColor(selEnemy));
+    };
+    prevE.on('pointerdown', () => {
+      selEnemy = (selEnemy - 1 + enemyKeys.length) % enemyKeys.length;
+      updateEnemy(); Settings.playSfx(this, 'sfx_btn');
+    });
+    nextE.on('pointerdown', () => {
+      selEnemy = (selEnemy + 1) % enemyKeys.length;
+      updateEnemy(); Settings.playSfx(this, 'sfx_btn');
+    });
+
+    // ── Seletor de quantidade ──────────────────────────────────
+    const prevQ = track(this.add.text(614, 682, '◀', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#aaa',
+      backgroundColor: '#111', padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setInteractive({ useHandCursor: true }));
+
+    const qtyText = track(this.add.text(650, 682, '×' + qtys[0], {
+      fontFamily: 'monospace', fontSize: '12px', color: '#fdd835',
+      backgroundColor: '#0a0a22', padding: { x: 6, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setFixedSize(44, 0));
+
+    const nextQ = track(this.add.text(686, 682, '▶', {
+      fontFamily: 'monospace', fontSize: '14px', color: '#aaa',
+      backgroundColor: '#111', padding: { x: 4, y: 3 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setInteractive({ useHandCursor: true }));
+
+    const updateQty = () => qtyText.setText('×' + qtys[selQty]);
+    prevQ.on('pointerdown', () => {
+      selQty = (selQty - 1 + qtys.length) % qtys.length;
+      updateQty(); Settings.playSfx(this, 'sfx_btn');
+    });
+    nextQ.on('pointerdown', () => {
+      selQty = (selQty + 1) % qtys.length;
+      updateQty(); Settings.playSfx(this, 'sfx_btn');
+    });
+
+    // ── Botão spawn ────────────────────────────────────────────
+    const spawnBtn = track(this.add.text(775, 682, '⚔ Spawnar', {
+      fontFamily: 'monospace', fontSize: '14px',
+      color: '#111', backgroundColor: '#00e676',
+      padding: { x: 14, y: 7 }
+    }).setOrigin(0.5).setDepth(11).setScrollFactor(0).setInteractive({ useHandCursor: true }));
+    spawnBtn.on('pointerover', () => spawnBtn.setBackgroundColor('#69f0ae'));
+    spawnBtn.on('pointerout',  () => spawnBtn.setBackgroundColor('#00e676'));
+    spawnBtn.on('pointerdown', () => {
+      const count  = qtys[selQty];
+      const type   = enemyKeys[selEnemy];
+      const label  = ENEMY_DATA[type].label;
+      for (let i = 0; i < count; i++) {
+        this.time.delayedCall(i * 350, () => {
+          if (!this.scene.isActive('GameScene')) return;
+          this.spawnEnemy(type);
+          this._aliveCount++;
+        });
+      }
+      Settings.playSfx(this, 'sfx_wave_start');
+      this.floatText(575, 320, '⚔ ' + count + '× ' + label, '#00e676');
+    });
+  }
+
   endGame(victory) {
+    if (this._sandbox) return;
     if (this._gameEnded) return;
     this._gameEnded = true;
     this._clearNextWavePreview();

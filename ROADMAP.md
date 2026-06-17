@@ -20,17 +20,18 @@ Cada item concluído é marcado com ✅.
 
 | # | Funcionalidade | Estado | Notas |
 |---|---------------|--------|-------|
-| 2.1 | **Upgrades bifurcados nível 4** (estilo Kingdom Rush) — 2 caminhos exclusivos ao atingir nível III | ⬜ Pendente | Ver tabela de caminhos abaixo |
+| 2.1 | **Upgrades bifurcados nível 4** (estilo Kingdom Rush) — 2 caminhos exclusivos ao atingir nível III | ✅ Concluído | Cavaleiros/Assassinos, Ranger/Sniper, Gelo/Necromante, Foguete/Minas; texturas procedurais nível IV; painel HUD com seleção de caminho |
 | 2.2 | **Inimigo boss** no final de cada nível — HP ×5, habilidade especial, animação de entrada | ⬜ Pendente | Adicionar tipo `boss_X` ao `EnemyData.js` e última wave de cada nível |
 | 2.3 | **Modo Infinito / Survival** — waves sem fim com +10% HP/speed por wave, leaderboard local | ⬜ Pendente | Reutiliza o sistema de waves existente; adicionar opção no MapScene |
+| 2.4 | **Modo Sandbox** — mapa com ouro/vidas infinitos para testar estratégias; spawner manual de inimigos | ✅ Concluído | Acessível ao clicar num nível no MapScene; painel de spawn com seletor de inimigo/quantidade |
 
 ### Caminhos de upgrade bifurcados (2.1)
 
 | Torre | Caminho A | Caminho B |
 |-------|-----------|-----------|
-| Barracas | **Cavaleiros** — soldados com HP ×3, respawn 12 s | **Assassinos** — dano crítico 3×, soldados mais rápidos |
+| Barracas | **Cavaleiros** — soldados com HP ×3, respawn 12 s | **Assassinos** — dano crítico 3×, soldados mais rápidos, maior chance de críticos |
 | Arqueiros | **Ranger** — alcance +50%, flechas perfurantes | **Sniper** — ignora armadura física, dano ×2.5 |
-| Mago | **Mago de Gelo** — slow permanente em área, sem dano direto | **Nigromante** — revive inimigos fracos como aliados temporários |
+| Mago | **Mago de Gelo** — slow permanente em área + pulso de gelo 35dmg/2.5s | **Necromante** — revive inimigos fracos como aliados temporários |
 | Artilharia | **Foguete** — atinge voadores, splash aéreo | **Mina Terrestre** — coloca armadilha; explode ao pisar |
 
 ---

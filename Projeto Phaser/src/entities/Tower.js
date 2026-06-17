@@ -15,11 +15,12 @@ function clampToMap(x, y) {
 export class Tower extends Phaser.GameObjects.Container {
   constructor(scene, x, y, towerType) {
     super(scene, x, y);
-    this.towerType = towerType;
-    this.level     = 0;
-    this.def       = TOWER_DATA[towerType];
-    this.lastFired = 0;
-    this.target    = null;
+    this.towerType   = towerType;
+    this.level       = 0;
+    this.chosenPath  = null;
+    this.def         = TOWER_DATA[towerType];
+    this.lastFired   = 0;
+    this.target      = null;
 
     this._sprite = scene.add.image(0, 0, 'tower_' + towerType);
     this.add(this._sprite);
@@ -34,10 +35,14 @@ export class Tower extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
-  get stats() { return this.def.levels[this.level]; }
+  get stats() {
+    if (this.level === 3 && this.chosenPath) return this.def.paths[this.chosenPath];
+    return this.def.levels[Math.min(this.level, 2)];
+  }
 
+  /** Sobe nível normal (I→II→III). Não chama para escolha de caminho. */
   upgrade() {
-    if (this.level >= this.def.levels.length - 1) return false;
+    if (this.level >= 2) return false;
     this.level++;
     this._sprite.setTexture('tower_' + this.towerType + '_' + (this.level + 1));
     this._levelText.setText(this.stats.label);
@@ -46,8 +51,26 @@ export class Tower extends Phaser.GameObjects.Container {
     return true;
   }
 
-  canUpgrade()  { return this.level < this.def.levels.length - 1; }
-  upgradeCost() { return this.stats.upgradeCost; }
+  /** Escolhe caminho IV (A ou B). Só pode ser chamado em nível III. */
+  choosePath(path) {
+    if (!this.def.paths || this.level !== 2 || this.chosenPath) return false;
+    this.chosenPath = path;
+    this.level = 3;
+
+    const texKey = 'tower_' + this.towerType + '_4' + path.toLowerCase();
+    if (this.scene.textures.exists(texKey)) this._sprite.setTexture(texKey);
+
+    const pd = this.def.paths[path];
+    this._levelText.setText(pd.label.substring(0, 4).toUpperCase());
+    this._levelText.setColor(path === 'A' ? '#f0c040' : '#42a5f5');
+    Settings.playSfx(this.scene, 'sfx_upgrade');
+    this.scene.tweens.add({ targets: this, scaleX: 1.35, scaleY: 1.35, duration: 160, yoyo: true });
+    return true;
+  }
+
+  canUpgrade()  { return this.level < 2; }
+  hasPaths()    { return this.level === 2 && !!this.def.paths && !this.chosenPath; }
+  upgradeCost() { return this.stats?.upgradeCost ?? null; }
 
   inRange(enemy) {
     return Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y) <= this.stats.range;
@@ -86,19 +109,98 @@ export class Tower extends Phaser.GameObjects.Container {
 // ─── ARCHER ──────────────────────────────────────────────────────────────────
 export class ArcherTower extends Tower {
   constructor(scene, x, y) { super(scene, x, y, 'archer'); }
+
   fire(enemy) {
     Settings.playSfx(this.scene, 'sfx_shoot_arrow');
-    const dmg = this.stats.damage;
+    const dmg         = this.stats.damage;
+    const ignoreArmor = !!this.stats.ignoreArmor;
+    const piercing    = !!this.stats.piercing;
+
     new Projectile(this.scene, this.x, this.y, enemy, {
       texture: 'proj_arrow', speed: 340,
-      onHit: (e) => { if (e.takeDamage(dmg,false,false)) this.scene.events.emit('enemyKilled',e); }
+      onHit: (e, all) => {
+        if (e.takeDamage(dmg, false, ignoreArmor))
+          this.scene.events.emit('enemyKilled', e);
+        if (piercing) {
+          let hits = 0;
+          for (const ae of all) {
+            if (!ae.alive || ae === e) continue;
+            if (Phaser.Math.Distance.Between(e.x, e.y, ae.x, ae.y) <= 48) {
+              if (ae.takeDamage(dmg, false, ignoreArmor))
+                this.scene.events.emit('enemyKilled', ae);
+              if (++hits >= 2) break;
+            }
+          }
+        }
+      }
     });
   }
 }
 
 // ─── MAGE ────────────────────────────────────────────────────────────────────
 export class MageTower extends Tower {
-  constructor(scene, x, y) { super(scene, x, y, 'mage'); }
+  constructor(scene, x, y) {
+    super(scene, x, y, 'mage');
+    this._necroListener = null;
+  }
+
+  choosePath(path) {
+    const ok = super.choosePath(path);
+    if (ok && path === 'B') {
+      // Necromante: ao matar inimigo em alcance, 55% chance de spawnar zombie
+      this._necroListener = (e) => {
+        if (!this.scene || !this.active) return;
+        if (Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) > this.stats.range) return;
+        if (Math.random() > 0.55) return;
+        const z = new Soldier(
+          this.scene, e.x, e.y,
+          { hp: 80, soldierDmg: 15 },
+          e.x, e.y
+        );
+        z._tintVal = 0x88ff88;
+        z._sprite?.setTint?.(0x88ff88);
+        this.scene._reinfSoldiers?.push(z);
+        this.scene.time.delayedCall(this.stats.zombieDuration || 8000, () => {
+          if (z.alive) z.die();
+        });
+      };
+      this.scene.events.on('enemyKilled', this._necroListener);
+    }
+    return ok;
+  }
+
+  update(time, enemies) {
+    if (this.chosenPath === 'A') {
+      // Campo de slow contínuo
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (this.inRange(e)) e.applySlow(this.stats.slowMs || 2500);
+      }
+      // Pulso de dano periódico
+      const fr = this.stats.fireRate || 2500;
+      if (time - this.lastFired >= fr) {
+        let hitAny = false;
+        for (const e of enemies) {
+          if (!e.alive || !this.inRange(e)) continue;
+          hitAny = true;
+          if (e.takeDamage(this.stats.damage, true, false))
+            this.scene.events.emit('enemyKilled', e);
+        }
+        const ring = this.scene.add.image(this.x, this.y, 'range_circle')
+          .setDisplaySize(this.stats.range * 2, this.stats.range * 2)
+          .setDepth(5).setTint(0x88ddff).setAlpha(hitAny ? 0.5 : 0.18);
+        this.scene.tweens.add({
+          targets: ring, alpha: 0, scaleX: 1.15, scaleY: 1.15,
+          duration: 600, onComplete: () => ring.destroy()
+        });
+        if (hitAny) Settings.playSfx(this.scene, 'sfx_shoot_magic');
+        this.lastFired = time;
+      }
+      return;
+    }
+    super.update(time, enemies);
+  }
+
   fire(enemy) {
     Settings.playSfx(this.scene, 'sfx_shoot_magic');
     const splash = this.stats.splashRadius || 0;
@@ -109,43 +211,95 @@ export class MageTower extends Tower {
         if (splash > 0) {
           for (const ae of all) {
             if (!ae.alive) continue;
-            if (Phaser.Math.Distance.Between(e.x,e.y,ae.x,ae.y) <= splash) {
+            if (Phaser.Math.Distance.Between(e.x, e.y, ae.x, ae.y) <= splash) {
               ae.applySlow(1800);
-              if (ae.takeDamage(dmg*0.6,true,false)) this.scene.events.emit('enemyKilled',ae);
+              if (ae.takeDamage(dmg * 0.6, true, false)) this.scene.events.emit('enemyKilled', ae);
             }
           }
         } else {
           e.applySlow(1800);
-          if (e.takeDamage(dmg,true,false)) this.scene.events.emit('enemyKilled',e);
+          if (e.takeDamage(dmg, true, false)) this.scene.events.emit('enemyKilled', e);
         }
       }
     });
+  }
+
+  destroy(fromScene) {
+    if (this._necroListener) this.scene?.events.off('enemyKilled', this._necroListener);
+    super.destroy(fromScene);
   }
 }
 
 // ─── ARTILLERY ───────────────────────────────────────────────────────────────
 export class ArtilleryTower extends Tower {
-  constructor(scene, x, y) { super(scene, x, y, 'artillery'); }
-  canTarget(enemy) { return !enemy.flying; }
+  constructor(scene, x, y) {
+    super(scene, x, y, 'artillery');
+    this._mines = [];
+  }
+
+  canTarget(enemy) {
+    if (this.chosenPath === 'A') return true; // Foguete: atinge voadores
+    return !enemy.flying;
+  }
+
+  update(time, enemies) {
+    // Minas: colocar minas em vez de disparar projéteis
+    if (this.chosenPath === 'B') {
+      this._mines = this._mines.filter(m => !m._triggered && m.active);
+      for (const mine of this._mines) mine.checkTrigger(enemies);
+
+      if (this._mines.length < (this.stats.maxMines || 3)) {
+        if (!enemies || enemies.length === 0) return;
+        if (this.target && (!this.target.alive || !this.inRange(this.target))) this.target = null;
+        if (!this.target) this.target = this.findTarget(enemies);
+        if (!this.target) return;
+
+        if (time - this.lastFired >= (this.stats.mineDelay || 5000)) {
+          this._placeMine(this.target.x, this.target.y);
+          this.lastFired = time;
+          this.target = null;
+        }
+      }
+      return;
+    }
+    super.update(time, enemies);
+  }
+
+  _placeMine(x, y) {
+    const mine = new Mine(this.scene, x, y, this);
+    this._mines.push(mine);
+    this.scene.tweens.add({ targets: mine, scaleX: 1.3, scaleY: 1.3, duration: 120, yoyo: true });
+  }
+
   fire(enemy) {
     Settings.playSfx(this.scene, 'sfx_shoot_cannon');
-    const splash = this.stats.splashRadius;
-    const dmg    = this.stats.damage;
+    const splash      = this.stats.splashRadius;
+    const dmg         = this.stats.damage;
+    const hitsFlying  = !!this.stats.hitsFlying;
+
     new Projectile(this.scene, this.x, this.y, enemy, {
       texture: 'proj_cannon', speed: 210,
       onHit: (e, all) => {
-        const exp = this.scene.add.image(e.x,e.y,'explosion').setDepth(5);
-        this.scene.tweens.add({targets:exp,alpha:0,scale:1.6,duration:420,onComplete:()=>exp.destroy()});
-        Settings.playSfx(this.scene,'sfx_explosion');
+        const exp = this.scene.add.image(e.x, e.y, 'explosion').setDepth(5);
+        this.scene.tweens.add({ targets: exp, alpha: 0, scale: 1.6, duration: 420, onComplete: () => exp.destroy() });
+        Settings.playSfx(this.scene, 'sfx_explosion');
         for (const ae of all) {
-          if (!ae.alive || ae.flying) continue;
-          const d = Phaser.Math.Distance.Between(e.x,e.y,ae.x,ae.y);
+          if (!ae.alive) continue;
+          if (!hitsFlying && ae.flying) continue;
+          const d = Phaser.Math.Distance.Between(e.x, e.y, ae.x, ae.y);
           if (d <= splash) {
-            if (ae.takeDamage(dmg*(1-d/splash),false,false)) this.scene.events.emit('enemyKilled',ae);
+            if (ae.takeDamage(dmg * (1 - d / splash), false, false))
+              this.scene.events.emit('enemyKilled', ae);
           }
         }
       }
     });
+  }
+
+  destroy(fromScene) {
+    for (const mine of this._mines) { if (mine.active) mine.destroy(); }
+    this._mines = [];
+    super.destroy(fromScene);
   }
 }
 
@@ -157,7 +311,6 @@ export class BarracksTower extends Tower {
     this._respawnTimers = [];
     this._spawnDelay    = 8000;
 
-    // Rally inicial — fazer snap ao tile de pista mais próximo da torre
     let rx = x + 48, ry = y + 32;
     if (scene._snapToPath) {
       const snapped = scene._snapToPath(x, y);
@@ -166,10 +319,20 @@ export class BarracksTower extends Tower {
     this._rallyX = rx;
     this._rallyY = ry;
 
-    // Marcador de rally — visual apenas; posição definida pelo menu da torre
     this._rallyMarker = scene.add.text(this._rallyX, this._rallyY, '⚑', {
       fontSize: '18px', color: '#42a5f5'
     }).setOrigin(0.5).setDepth(6).setAlpha(0.7);
+  }
+
+  choosePath(path) {
+    const ok = super.choosePath(path);
+    if (ok) {
+      this._spawnDelay = this.stats.respawnDelay || 8000;
+      this._soldiers.forEach(s => s.die());
+      this._soldiers = [];
+      this._respawnTimers = [];
+    }
+    return ok;
   }
 
   setRally(x, y) {
@@ -181,7 +344,6 @@ export class BarracksTower extends Tower {
   update(time, enemies) {
     const maxSoldiers = this.stats.soldiers;
 
-    // Limpar soldados mortos e agendar respawn (um timer por morte)
     for (let i = this._soldiers.length - 1; i >= 0; i--) {
       if (!this._soldiers[i].alive) {
         this._soldiers.splice(i, 1);
@@ -189,7 +351,6 @@ export class BarracksTower extends Tower {
       }
     }
 
-    // Processar timers de respawn vencidos
     this._respawnTimers = this._respawnTimers.filter(t => {
       if (time >= t && this._soldiers.length < maxSoldiers) {
         this.spawnSoldier();
@@ -198,7 +359,6 @@ export class BarracksTower extends Tower {
       return true;
     });
 
-    // Spawn inicial — criar TODOS os soldados em falta de uma vez
     if (this._soldiers.length < maxSoldiers && this._respawnTimers.length === 0) {
       const missing = maxSoldiers - this._soldiers.length;
       for (let i = 0; i < missing; i++) this.spawnSoldier();
@@ -209,13 +369,22 @@ export class BarracksTower extends Tower {
 
   spawnSoldier() {
     const idx = this._soldiers.length;
-    // Offset em formação para não empilhar
-    const offsets = [{x:0,y:0},{x:20,y:0},{x:-20,y:0},{x:0,y:20}];
+    const offsets = [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: -20, y: 0 }, { x: 0, y: 20 }];
     const off = offsets[idx % offsets.length];
+
     const sol = new Soldier(
-      this.scene, this._rallyX + off.x, this._rallyY + off.y,
-      this.stats, this._rallyX, this._rallyY
+      this.scene,
+      this._rallyX + off.x, this._rallyY + off.y,
+      this.stats,
+      this._rallyX, this._rallyY
     );
+
+    if (this.chosenPath === 'B') {
+      sol._critChance = this.stats.critChance || 0;
+      sol._critMult   = this.stats.critMult   || 3;
+      sol._speed      = this.stats.soldierSpeed || 3.5;
+    }
+
     this._soldiers.push(sol);
   }
 
@@ -251,21 +420,67 @@ class Projectile extends Phaser.GameObjects.Image {
   _tick(time, delta) {
     if (!this._target?.alive) { this.destroy(); return; }
     const tx = this._target.x, ty = this._target.y;
-    const dist = Phaser.Math.Distance.Between(this.x,this.y,tx,ty);
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, tx, ty);
     const step = this._speed * delta / 1000;
     if (dist <= step + 4) {
       this._onHit(this._target, this.scene._enemies || []);
       this.destroy(); return;
     }
-    const angle = Math.atan2(ty-this.y, tx-this.x);
-    this.x += Math.cos(angle)*step;
-    this.y += Math.sin(angle)*step;
+    const angle = Math.atan2(ty - this.y, tx - this.x);
+    this.x += Math.cos(angle) * step;
+    this.y += Math.sin(angle) * step;
     this.setRotation(angle);
   }
 
   destroy() {
     this.scene?.events.off('update', this._tick, this);
     super.destroy();
+  }
+}
+
+// ─── MINE ────────────────────────────────────────────────────────────────────
+class Mine extends Phaser.GameObjects.Image {
+  constructor(scene, x, y, owner) {
+    super(scene, x, y, 'mine');
+    this._owner     = owner;
+    this._triggered = false;
+    this._armTime   = Date.now() + 1500; // 1.5s antes de ativar
+    this.setDepth(2).setDisplaySize(18, 18).setAlpha(0.5);
+    scene.add.existing(this);
+    // Animar de semi-transparente para visível enquanto arma
+    scene.tweens.add({ targets: this, alpha: 1, duration: 1400, ease: 'Linear' });
+  }
+
+  checkTrigger(enemies) {
+    if (this._triggered || !this.active) return;
+    if (Date.now() < this._armTime) return; // ainda a armar
+    for (const e of enemies) {
+      if (!e.alive || e.flying) continue;
+      if (Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) > 20) continue;
+
+      this._triggered = true;
+      const dmg    = this._owner.stats.damage;
+      const radius = this._owner.stats.splashRadius;
+
+      const exp = this.scene.add.image(this.x, this.y, 'explosion').setDepth(5);
+      this.scene.tweens.add({
+        targets: exp, alpha: 0, scale: 1.8, duration: 480,
+        onComplete: () => exp.destroy()
+      });
+      Settings.playSfx(this.scene, 'sfx_explosion');
+      this.scene.cameras.main.shake(200, 0.008);
+
+      for (const ae of enemies) {
+        if (!ae.alive || ae.flying) continue;
+        const d = Phaser.Math.Distance.Between(this.x, this.y, ae.x, ae.y);
+        if (d <= radius) {
+          if (ae.takeDamage(dmg * (1 - d / radius), false, false))
+            this.scene.events.emit('enemyKilled', ae);
+        }
+      }
+      this.destroy();
+      return;
+    }
   }
 }
 
@@ -280,18 +495,19 @@ export class Soldier extends Phaser.GameObjects.Sprite {
     this._atkRate     = 1100;
     this._atkTimer    = 0;
     this._target      = null;
-    // Nota: dano recebido é gerido por Enemy.attackSoldiers (uma vez por 1200ms)
     this._rallyX      = rallyX;
     this._rallyY      = rallyY;
     this._combatRange = 50;
     this._curAnim     = '';
-    this.setDisplaySize(28, 28);
-    this.setDepth(3);
+    this._speed       = 2.5;
+    this._critChance  = 0;
+    this._critMult    = 3;
+    this.setDisplaySize(28, 28).setDepth(3);
     scene.add.existing(this);
     this._setAnim('soldier_idle');
 
-    this._barBg = scene.add.rectangle(x, y-16, 24, 4, 0x330000).setDepth(4);
-    this._barFg = scene.add.rectangle(x-12, y-16, 24, 4, 0x00e676).setOrigin(0,0.5).setDepth(4);
+    this._barBg = scene.add.rectangle(x, y - 16, 24, 4, 0x330000).setDepth(4);
+    this._barFg = scene.add.rectangle(x - 12, y - 16, 24, 4, 0x00e676).setOrigin(0, 0.5).setDepth(4);
   }
 
   _setAnim(key) {
@@ -308,13 +524,11 @@ export class Soldier extends Phaser.GameObjects.Sprite {
   update(time, enemies) {
     if (!this.alive) return;
 
-    // Limpar target morto
     if (this._target && !this._target.alive) {
       this._target._engagedSoldiers = (this._target._engagedSoldiers || 1) - 1;
       this._target = null;
     }
 
-    // Procurar inimigo para combater (nunca voadores)
     if (!this._target) {
       let best = Infinity;
       for (const e of enemies) {
@@ -332,16 +546,19 @@ export class Soldier extends Phaser.GameObjects.Sprite {
     if (this._target) {
       const dx = this._target.x - this.x;
       const dy = this._target.y - this.y;
-      const d  = Math.sqrt(dx*dx + dy*dy);
+      const d  = Math.sqrt(dx * dx + dy * dy);
       if (d > 28) {
-        this.x += (dx/d) * 2.5;
-        this.y += (dy/d) * 2.5;
+        this.x += (dx / d) * this._speed;
+        this.y += (dy / d) * this._speed;
         this._setAnim('soldier_walk');
         this.setFlipX(dx < 0);
       } else {
         if (time - this._atkTimer >= this._atkRate) {
           this._setAnim('soldier_attack');
-          if (this._target.takeDamage(this._dmg, false, false)) {
+          // Crit dos Assassinos
+          const isCrit = this._critChance > 0 && Math.random() < this._critChance;
+          const dmg    = isCrit ? this._dmg * this._critMult : this._dmg;
+          if (this._target.takeDamage(dmg, false, false)) {
             this.scene.events.emit('enemyKilled', this._target);
             this._target = null;
           }
@@ -353,9 +570,9 @@ export class Soldier extends Phaser.GameObjects.Sprite {
     } else {
       const dx = this._rallyX - this.x;
       const dy = this._rallyY - this.y;
-      const d  = Math.sqrt(dx*dx + dy*dy);
+      const d  = Math.sqrt(dx * dx + dy * dy);
       if (d > 6) {
-        this.x += dx/d * 2; this.y += dy/d * 2;
+        this.x += dx / d * (this._speed * 0.8); this.y += dy / d * (this._speed * 0.8);
         this._setAnim('soldier_walk');
         this.setFlipX(dx < 0);
       } else {
@@ -363,9 +580,9 @@ export class Soldier extends Phaser.GameObjects.Sprite {
       }
     }
 
-    this._barBg.setPosition(this.x, this.y-16);
-    this._barFg.setPosition(this.x-12, this.y-16);
-    this._barFg.setSize(24 * Math.max(0, this._hp/this._maxHp), 4);
+    this._barBg.setPosition(this.x, this.y - 16);
+    this._barFg.setPosition(this.x - 12, this.y - 16);
+    this._barFg.setSize(24 * Math.max(0, this._hp / this._maxHp), 4);
   }
 
   takeDamage(dmg) {
@@ -377,13 +594,15 @@ export class Soldier extends Phaser.GameObjects.Sprite {
   die() {
     this.alive = false;
     if (this._target) {
-      this._target._engagedSoldiers = Math.max(0, (this._target._engagedSoldiers||1)-1);
+      this._target._engagedSoldiers = Math.max(0, (this._target._engagedSoldiers || 1) - 1);
       this._target = null;
     }
     this._barBg?.destroy(); this._barFg?.destroy();
     if (!this.anims) { this.destroy(); return; }
     this.play('soldier_die');
-    this.scene?.tweens.add({ targets: this, alpha: 0, delay: 450, duration: 250,
-      onComplete: () => this.destroy() });
+    this.scene?.tweens.add({
+      targets: this, alpha: 0, delay: 450, duration: 250,
+      onComplete: () => this.destroy()
+    });
   }
 }
