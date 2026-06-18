@@ -66,6 +66,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.generateTowerTextures();
     this.generateTowerLevel4Textures();
     this.generateSoldierSpritesheet();
+    this.generateEliteSoldierSpritesheets();
     this.generateUITextures();
     this.scene.start('MenuScene');
   }
@@ -673,6 +674,198 @@ export default class PreloadScene extends Phaser.Scene {
     this.anims.create({ key:'soldier_die',    frames:[{key:'soldier',frame:8},{key:'soldier',frame:9},{key:'soldier',frame:10}], frameRate:5, repeat:0  });
   }
 
+  generateEliteSoldierSpritesheets() {
+    const FW = 48, FH = 48, TOTAL = 11;
+    const LEGL = [0,7,0,-7];
+    const ARMR = [0,-7,0,7];
+
+    const buildSheet = (key, drawFn) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = FW * TOTAL; canvas.height = FH;
+      const ctx = canvas.getContext('2d');
+      const frames = [
+        {t:'idle',v:0},{t:'idle',v:1},
+        {t:'walk',v:0},{t:'walk',v:1},{t:'walk',v:2},{t:'walk',v:3},
+        {t:'attack',v:0},{t:'attack',v:1},
+        {t:'die',v:0},{t:'die',v:1},{t:'die',v:2},
+      ];
+      frames.forEach(({t,v},i) => {
+        ctx.save(); ctx.translate(i*FW,0);
+        drawFn(ctx,t,v);
+        ctx.restore();
+      });
+      if (this.textures.exists(key)) this.textures.remove(key);
+      this.textures.addCanvas(key, canvas);
+      const tex = this.textures.get(key);
+      for (let f=0;f<TOTAL;f++) tex.add(f,0,f*FW,0,FW,FH);
+      this.anims.create({ key:key+'_idle',   frames:[{key,frame:0},{key,frame:1}],                       frameRate:3, repeat:-1 });
+      this.anims.create({ key:key+'_walk',   frames:[{key,frame:2},{key,frame:3},{key,frame:4},{key,frame:5}], frameRate:8, repeat:-1 });
+      this.anims.create({ key:key+'_attack', frames:[{key,frame:6},{key,frame:7}],                       frameRate:8, repeat:0  });
+      this.anims.create({ key:key+'_die',    frames:[{key,frame:8},{key,frame:9},{key,frame:10}],         frameRate:5, repeat:0  });
+    };
+
+    // ── Cavaleiro (armadura pesada dourada, escudo grande, espada larga) ──
+    buildSheet('soldier_knight', (ctx, type, variant) => {
+      const cx=24, isWalk=type==='walk', isAtk=type==='attack', isDie=type==='die';
+      const ll=isWalk?LEGL[variant]:0, rl=isWalk?-LEGL[variant]:0;
+      const bob=(type==='idle'&&variant===1)?-1:0;
+
+      if (isDie && variant===2) {
+        ctx.save(); ctx.translate(cx,38); ctx.rotate(Math.PI/2-0.15);
+        ctx.fillStyle='rgba(0,0,0,.18)';
+        ctx.beginPath(); ctx.ellipse(0,12,12,3,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#b8860b'; ctx.fillRect(-10,-5,20,10);
+        ctx.fillStyle='#c8c860'; ctx.fillRect(-12,-3,8,6);
+        ctx.fillStyle='#daa520'; ctx.beginPath(); ctx.arc(-14,0,6,0,Math.PI*2); ctx.fill();
+        ctx.restore(); return;
+      }
+      ctx.save(); ctx.translate(0,bob);
+      ctx.fillStyle='rgba(0,0,0,.18)';
+      ctx.beginPath(); ctx.ellipse(cx,46,10,3,0,0,Math.PI*2); ctx.fill();
+      // Pernas com grevas douradas
+      ctx.strokeStyle='#8b7500'; ctx.lineWidth=5; ctx.lineCap='round';
+      if (!isDie) {
+        ctx.beginPath(); ctx.moveTo(cx-3,40); ctx.lineTo(cx-3+ll*.6,47); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+3,40); ctx.lineTo(cx+3+rl*.6,47); ctx.stroke();
+        ctx.fillStyle='#6b5a00';
+        ctx.beginPath(); ctx.ellipse(cx-3+ll*.6,48,4,2.5,-.1,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx+3+rl*.6,48,4,2.5,.1,0,Math.PI*2); ctx.fill();
+      } else {
+        const ky=variant===0?40:44;
+        ctx.fillStyle='#8b7500'; ctx.fillRect(cx-8,ky,7,48-ky); ctx.fillRect(cx+1,variant===0?43:45,7,48-ky);
+      }
+      // Corpo — armadura pesada dourada
+      ctx.fillStyle='#b8860b';
+      ctx.beginPath(); ctx.ellipse(cx,33,9,10,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#daa520'; ctx.fillRect(cx-8,26,16,12);
+      ctx.fillStyle='#c8960c'; ctx.fillRect(cx-6,28,12,4);
+      ctx.strokeStyle='#f0c040'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(cx,26); ctx.lineTo(cx,38); ctx.stroke();
+      // Escudo grande (braço esquerdo)
+      const shX=cx-14+(isAtk?(variant===0?-3:2):(isWalk?ARMR[variant]*.35:0));
+      const shY=29+(isAtk?(variant===0?2:0):(isWalk?ARMR[variant]*.12:0));
+      if (!isDie||variant<2) {
+        ctx.fillStyle='#b8860b';
+        ctx.beginPath(); ctx.moveTo(shX,shY-8); ctx.lineTo(shX-7,shY-3); ctx.lineTo(shX-7,shY+5);
+        ctx.lineTo(shX,shY+9); ctx.lineTo(shX+7,shY+5); ctx.lineTo(shX+7,shY-3); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle='#f0c040'; ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.moveTo(shX,shY-8); ctx.lineTo(shX-7,shY-3); ctx.lineTo(shX-7,shY+5);
+        ctx.lineTo(shX,shY+9); ctx.lineTo(shX+7,shY+5); ctx.lineTo(shX+7,shY-3); ctx.closePath(); ctx.stroke();
+        ctx.strokeStyle='#fff8dc'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(shX,shY-5); ctx.lineTo(shX,shY+6); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(shX-4,shY); ctx.lineTo(shX+4,shY); ctx.stroke();
+      }
+      // Espada larga (braço direito)
+      const swX=cx+14+(isAtk?(variant===0?3:-2):(isWalk?-ARMR[variant]*.35:0));
+      const swY=28+(isAtk?(variant===0?-3:2):(isWalk?-ARMR[variant]*.12:0));
+      const swA=isAtk?(variant===0?-1.2:0.6):-0.3;
+      if (!isDie||variant<2) {
+        ctx.save(); ctx.translate(swX,swY); ctx.rotate(swA);
+        ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=3; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-16); ctx.stroke();
+        ctx.fillStyle='#daa520'; ctx.fillRect(-5,-1,10,3);
+        ctx.fillStyle='#f0c040'; ctx.fillRect(-2,-4,4,4);
+        ctx.restore();
+      }
+      // Pescoço
+      ctx.fillStyle='#c8a882'; ctx.fillRect(cx-2.5,20,5,5);
+      // Cabeça — elmo completo dourado com viseira
+      ctx.fillStyle='#daa520';
+      ctx.beginPath(); ctx.arc(cx,16,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b8860b'; ctx.fillRect(cx-10,13,20,7);
+      ctx.fillStyle='#1a1a1a'; ctx.fillRect(cx-7,14,14,3);
+      // Penacho grande dourado
+      if (!isDie) {
+        ctx.strokeStyle='#f0c040'; ctx.lineWidth=2.5; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(cx-3,7); ctx.quadraticCurveTo(cx+2,1,cx+6,6+bob); ctx.stroke();
+        ctx.strokeStyle='#daa520'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(cx-1,8); ctx.quadraticCurveTo(cx+3,3,cx+5,7+bob); ctx.stroke();
+      }
+      ctx.restore();
+    });
+
+    // ── Assassino (capuz escuro, adagas duplas, ágil) ─────────────────────
+    buildSheet('soldier_assassin', (ctx, type, variant) => {
+      const cx=24, isWalk=type==='walk', isAtk=type==='attack', isDie=type==='die';
+      const ll=isWalk?LEGL[variant]:0, rl=isWalk?-LEGL[variant]:0;
+      const bob=(type==='idle'&&variant===1)?-1:0;
+
+      if (isDie && variant===2) {
+        ctx.save(); ctx.translate(cx,38); ctx.rotate(Math.PI/2-0.15);
+        ctx.fillStyle='rgba(0,0,0,.18)';
+        ctx.beginPath(); ctx.ellipse(0,12,12,3,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1a1a28'; ctx.fillRect(-10,-5,20,10);
+        ctx.fillStyle='#33cc33'; ctx.fillRect(-14,-2,5,4);
+        ctx.restore(); return;
+      }
+      ctx.save(); ctx.translate(0,bob);
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(cx,46,9,3,0,0,Math.PI*2); ctx.fill();
+      // Pernas finas escuras
+      ctx.strokeStyle='#222230'; ctx.lineWidth=3.5; ctx.lineCap='round';
+      if (!isDie) {
+        ctx.beginPath(); ctx.moveTo(cx-3,40); ctx.lineTo(cx-3+ll*.7,47); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+3,40); ctx.lineTo(cx+3+rl*.7,47); ctx.stroke();
+        ctx.fillStyle='#111118';
+        ctx.beginPath(); ctx.ellipse(cx-3+ll*.7,48,3.5,2,-.1,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx+3+rl*.7,48,3.5,2,.1,0,Math.PI*2); ctx.fill();
+      } else {
+        const ky=variant===0?40:44;
+        ctx.fillStyle='#222230'; ctx.fillRect(cx-7,ky,6,48-ky); ctx.fillRect(cx+1,variant===0?43:45,6,48-ky);
+      }
+      // Corpo — manto escuro fino
+      ctx.fillStyle='#1a1a28';
+      ctx.beginPath(); ctx.ellipse(cx,33,7,9,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#28283a'; ctx.fillRect(cx-6,27,12,10);
+      // Cinto roxo
+      ctx.fillStyle='#6622aa'; ctx.fillRect(cx-6,35,12,2);
+      // Adaga esquerda
+      const dLx=cx-12+(isAtk?(variant===0?-4:3):(isWalk?ARMR[variant]*.4:0));
+      const dLy=30+(isAtk?(variant===0?-2:2):(isWalk?ARMR[variant]*.12:0));
+      const dLa=isAtk?(variant===0?-1.4:0.3):-0.5;
+      if (!isDie||variant<2) {
+        ctx.save(); ctx.translate(dLx,dLy); ctx.rotate(dLa);
+        ctx.strokeStyle='#aaaacc'; ctx.lineWidth=1.5; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-12); ctx.stroke();
+        ctx.fillStyle='#33cc33'; ctx.beginPath(); ctx.arc(0,-12,1.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#6622aa'; ctx.fillRect(-2.5,0,5,2);
+        ctx.restore();
+      }
+      // Adaga direita
+      const dRx=cx+12+(isAtk?(variant===0?4:-3):(isWalk?-ARMR[variant]*.4:0));
+      const dRy=30+(isAtk?(variant===0?-2:2):(isWalk?-ARMR[variant]*.12:0));
+      const dRa=isAtk?(variant===0?1.4:-0.3):0.5;
+      if (!isDie||variant<2) {
+        ctx.save(); ctx.translate(dRx,dRy); ctx.rotate(dRa);
+        ctx.strokeStyle='#aaaacc'; ctx.lineWidth=1.5; ctx.lineCap='round';
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-12); ctx.stroke();
+        ctx.fillStyle='#33cc33'; ctx.beginPath(); ctx.arc(0,-12,1.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#6622aa'; ctx.fillRect(-2.5,0,5,2);
+        ctx.restore();
+      }
+      // Pescoço
+      ctx.fillStyle='#c8a882'; ctx.fillRect(cx-2,21,4,4);
+      // Cabeça — capuz escuro
+      ctx.fillStyle='#18182a';
+      ctx.beginPath(); ctx.arc(cx,17,9,0,Math.PI*2); ctx.fill();
+      // Capuz pontiagudo
+      ctx.fillStyle='#111122';
+      ctx.beginPath(); ctx.moveTo(cx-9,18); ctx.lineTo(cx,6); ctx.lineTo(cx+9,18); ctx.closePath(); ctx.fill();
+      // Olhos brilhantes
+      if (!isDie) {
+        ctx.fillStyle='#33cc33';
+        ctx.beginPath(); ctx.ellipse(cx-3,17,2,1.2,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx+3,17,2,1.2,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#116611';
+        ctx.beginPath(); ctx.arc(cx-3,17,0.8,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx+3,17,0.8,0,Math.PI*2); ctx.fill();
+      }
+      // Máscara
+      ctx.fillStyle='#222230'; ctx.fillRect(cx-6,19,12,3);
+      ctx.restore();
+    });
+  }
+
   /**
    * Gera apenas elementos de UI e partículas que não fazem sentido ter como ficheiro.
    * Sprites de jogo (torres, inimigos) vêm de /assets/images.
@@ -746,6 +939,28 @@ export default class PreloadScene extends Phaser.Scene {
     g.fillRect(8,1,2,4); g.fillRect(8,14,2,4);
     g.fillRect(1,8,4,2); g.fillRect(14,8,4,2);
     g.generateTexture('mine', 18, 18); g.destroy();
+
+    // Projétil foguete (míssil pequeno)
+    const rk = document.createElement('canvas');
+    rk.width = 10; rk.height = 20;
+    const rc = rk.getContext('2d');
+    // Corpo
+    rc.fillStyle = '#999';
+    rc.fillRect(2, 6, 6, 10);
+    // Ponta (nariz)
+    rc.fillStyle = '#c0c0c0';
+    rc.beginPath(); rc.moveTo(5, 0); rc.lineTo(2, 6); rc.lineTo(8, 6); rc.closePath(); rc.fill();
+    // Aletas vermelhas
+    rc.fillStyle = '#cc3300';
+    rc.beginPath(); rc.moveTo(2, 13); rc.lineTo(0, 18); rc.lineTo(2, 18); rc.closePath(); rc.fill();
+    rc.beginPath(); rc.moveTo(8, 13); rc.lineTo(10, 18); rc.lineTo(8, 18); rc.closePath(); rc.fill();
+    // Chama
+    rc.fillStyle = '#ff5500';
+    rc.beginPath(); rc.arc(5, 19, 2.5, 0, Math.PI * 2); rc.fill();
+    rc.fillStyle = '#ffaa00';
+    rc.beginPath(); rc.arc(5, 19, 1.2, 0, Math.PI * 2); rc.fill();
+    if (this.textures.exists('proj_rocket')) this.textures.remove('proj_rocket');
+    this.textures.addCanvas('proj_rocket', rk);
   }
 
   /**
@@ -761,57 +976,85 @@ export default class PreloadScene extends Phaser.Scene {
       this.textures.addCanvas(key, cv);
     };
 
-    // ── BARRACAS 4A — Cavaleiros (dourado, imponente) ─────────────────────
+    // ── BARRACAS 4A — Cavaleiros (fortaleza dourada com escudo e espada) ──
     mk('tower_barracks_4a', ctx => {
-      ctx.fillStyle='rgba(0,0,0,.22)';
-      ctx.beginPath(); ctx.ellipse(cx,45,16,3,0,0,Math.PI*2); ctx.fill();
-      // Torres laterais
-      ctx.fillStyle='#686868'; ctx.fillRect(0,16,10,28); ctx.fillRect(38,16,10,28);
-      // Ameias
-      [0,4,8,38,42,46].forEach(x => { ctx.fillStyle='#505050'; ctx.fillRect(x,12,3,6); });
-      // Corpo central
-      ctx.fillStyle='#5a5a5a'; ctx.fillRect(8,14,32,30);
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(cx,46,18,4,0,0,Math.PI*2); ctx.fill();
+      // Muralha pesada
+      ctx.fillStyle='#6a6a6a'; ctx.fillRect(4,18,40,26);
       // Textura de pedra
-      ctx.strokeStyle='#444'; ctx.lineWidth=1;
-      for (let r=0;r<4;r++) { const y=17+r*6,off=(r%2)*4; for (let x=10+off;x<38;x+=8) ctx.strokeRect(x,y,7,5); }
+      ctx.strokeStyle='#555'; ctx.lineWidth=0.8;
+      for (let r=0;r<4;r++) { const y=20+r*6,off=(r%2)*5; for (let x=6+off;x<42;x+=10) ctx.strokeRect(x,y,9,5); }
+      // Torreões laterais com ameias
+      ctx.fillStyle='#787878'; ctx.fillRect(1,12,12,32); ctx.fillRect(35,12,12,32);
+      ctx.fillStyle='#606060';
+      [1,6,11,35,40,45].forEach(x => ctx.fillRect(x,8,4,6));
       // Friso dourado
-      ctx.fillStyle='#c8960c'; ctx.fillRect(8,14,32,3);
-      ctx.fillStyle='#f0c040'; ctx.fillRect(8,16,32,1);
-      // Cruz dourada na porta
-      ctx.fillStyle='#1a0a00'; ctx.beginPath(); ctx.arc(cx,37,5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-5,37,10,7);
-      ctx.strokeStyle='#c8960c'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(cx,32); ctx.lineTo(cx,43); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx-4,36); ctx.lineTo(cx+4,36); ctx.stroke();
+      ctx.fillStyle='#c8960c'; ctx.fillRect(4,18,40,3);
+      ctx.fillStyle='#f0c040'; ctx.fillRect(4,20,40,1);
+      // Escudo central
+      ctx.fillStyle='#b8860b';
+      ctx.beginPath(); ctx.moveTo(cx,22); ctx.lineTo(cx-7,26); ctx.lineTo(cx-7,34);
+      ctx.lineTo(cx,38); ctx.lineTo(cx+7,34); ctx.lineTo(cx+7,26); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#daa520'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(cx,22); ctx.lineTo(cx-7,26); ctx.lineTo(cx-7,34);
+      ctx.lineTo(cx,38); ctx.lineTo(cx+7,34); ctx.lineTo(cx+7,26); ctx.closePath(); ctx.stroke();
+      // Cruz no escudo
+      ctx.strokeStyle='#fff8dc'; ctx.lineWidth=1.8;
+      ctx.beginPath(); ctx.moveTo(cx,24); ctx.lineTo(cx,36); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-4,29); ctx.lineTo(cx+4,29); ctx.stroke();
+      // Espada por cima
+      ctx.strokeStyle='#e0e0e0'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx,16); ctx.stroke();
+      ctx.strokeStyle='#c8960c'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(cx-4,14); ctx.lineTo(cx+4,14); ctx.stroke();
+      ctx.fillStyle='#c8960c'; ctx.fillRect(cx-1,16,2,3);
       // Bandeira dourada
-      ctx.strokeStyle='#c8960c'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+1,12); ctx.stroke();
       ctx.fillStyle='#f0c040';
-      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+12,5); ctx.lineTo(cx+1,8); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(38,10); ctx.lineTo(46,13); ctx.lineTo(38,16); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#c8960c'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(38,6); ctx.lineTo(38,18); ctx.stroke();
     });
 
-    // ── BARRACAS 4B — Assassinos (sombrio, negro) ─────────────────────────
+    // ── BARRACAS 4B — Assassinos (covil sombrio com adagas cruzadas) ─────
     mk('tower_barracks_4b', ctx => {
-      ctx.fillStyle='rgba(0,0,0,.3)';
-      ctx.beginPath(); ctx.ellipse(cx,45,16,3,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#1a1a22'; ctx.fillRect(0,16,10,28); ctx.fillRect(38,16,10,28);
-      [0,4,8,38,42,46].forEach(x => { ctx.fillStyle='#111118'; ctx.fillRect(x,12,3,6); });
-      ctx.fillStyle='#222230'; ctx.fillRect(8,14,32,30);
+      ctx.fillStyle='rgba(0,0,0,.35)';
+      ctx.beginPath(); ctx.ellipse(cx,46,18,4,0,0,Math.PI*2); ctx.fill();
+      // Base baixa e larga (covil)
+      ctx.fillStyle='#18181f'; ctx.fillRect(3,26,42,18);
+      // Telhado angular (stealth)
+      ctx.fillStyle='#222230';
+      ctx.beginPath(); ctx.moveTo(0,26); ctx.lineTo(cx,12); ctx.lineTo(48,26); ctx.closePath(); ctx.fill();
       ctx.strokeStyle='#333344'; ctx.lineWidth=1;
-      for (let r=0;r<4;r++) { const y=17+r*6,off=(r%2)*4; for (let x=10+off;x<38;x+=8) ctx.strokeRect(x,y,7,5); }
-      ctx.fillStyle='#4a0000'; ctx.fillRect(8,14,32,3);
-      // Janelas violeta
-      ctx.fillStyle='#7700cc';
-      ctx.fillRect(12,20,4,6); ctx.fillRect(cx-2,20,4,6); ctx.fillRect(32,20,4,6);
+      ctx.beginPath(); ctx.moveTo(0,26); ctx.lineTo(cx,12); ctx.lineTo(48,26); ctx.closePath(); ctx.stroke();
+      // Friso vermelho
+      ctx.fillStyle='#660022'; ctx.fillRect(3,26,42,2);
+      // Janelas verdes (veneno)
+      ctx.fillStyle='#33cc33';
+      ctx.fillRect(8,30,4,4); ctx.fillRect(36,30,4,4);
+      ctx.fillStyle='#22aa22';
+      ctx.fillRect(9,31,2,2); ctx.fillRect(37,31,2,2);
       // Porta sombria
-      ctx.fillStyle='#050508'; ctx.beginPath(); ctx.arc(cx,37,5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-5,37,10,7);
-      // Punhal decorativo
-      ctx.strokeStyle='#9944cc'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(cx,32); ctx.lineTo(cx-4,38); ctx.lineTo(cx+4,38); ctx.lineTo(cx,32); ctx.stroke();
-      // Bandeira roxa
-      ctx.strokeStyle='#5500aa'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+1,12); ctx.stroke();
-      ctx.fillStyle='#7700cc';
-      ctx.beginPath(); ctx.moveTo(cx+1,2); ctx.lineTo(cx+12,5); ctx.lineTo(cx+1,8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#0a0a0f';
+      ctx.beginPath(); ctx.arc(cx,38,5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-5,38,10,6);
+      // Adagas cruzadas
+      ctx.strokeStyle='#aaaacc'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx-6,15); ctx.lineTo(cx+6,25); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+6,15); ctx.lineTo(cx-6,25); ctx.stroke();
+      // Guardas das adagas
+      ctx.strokeStyle='#8833aa'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(cx-4,16); ctx.lineTo(cx-8,14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+4,16); ctx.lineTo(cx+8,14); ctx.stroke();
+      // Fumo/névoa
+      ctx.fillStyle='rgba(80,40,120,0.25)';
+      ctx.beginPath(); ctx.arc(8,24,6,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(40,24,5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx,10,4,0,Math.PI*2); ctx.fill();
+      // Caveira pequena na porta
+      ctx.fillStyle='#888';
+      ctx.beginPath(); ctx.arc(cx,36,2.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#0a0a0f';
+      ctx.fillRect(cx-1.5,35.5,1,1); ctx.fillRect(cx+0.5,35.5,1,1);
     });
 
     // ── ARCHER 4A — Ranger (alcance longo, verde esmeralda) ──────────────

@@ -314,13 +314,16 @@ export class ArtilleryTower extends Tower {
   }
 
   fire(enemy) {
-    Settings.playSfx(this.scene, 'sfx_shoot_cannon');
+    const isRocket = this.chosenPath === 'A';
+    Settings.playSfx(this.scene, isRocket ? 'sfx_shoot_arrow' : 'sfx_shoot_cannon');
     const splash      = this.stats.splashRadius;
     const dmg         = this.stats.damage;
     const hitsFlying  = !!this.stats.hitsFlying;
 
     new Projectile(this.scene, this.x, this.y, enemy, {
-      texture: 'proj_cannon', speed: 210,
+      texture: isRocket ? 'proj_rocket' : 'proj_cannon',
+      speed: isRocket ? 280 : 210,
+      rotOffset: isRocket ? Math.PI / 2 : 0,
       onHit: (e, all) => {
         const exp = this.scene.add.image(e.x, e.y, 'explosion').setDepth(5);
         this.scene.tweens.add({ targets: exp, alpha: 0, scale: 1.6, duration: 420, onComplete: () => exp.destroy() });
@@ -414,11 +417,15 @@ export class BarracksTower extends Tower {
     const offsets = [{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: -20, y: 0 }, { x: 0, y: 20 }];
     const off = offsets[idx % offsets.length];
 
+    const spriteKey = this.chosenPath === 'A' ? 'soldier_knight'
+                   : this.chosenPath === 'B' ? 'soldier_assassin'
+                   : 'soldier';
     const sol = new Soldier(
       this.scene,
       this._rallyX + off.x, this._rallyY + off.y,
       this.stats,
-      this._rallyX, this._rallyY
+      this._rallyX, this._rallyY,
+      spriteKey
     );
 
     if (this.chosenPath === 'B') {
@@ -451,9 +458,10 @@ export class BarracksTower extends Tower {
 class Projectile extends Phaser.GameObjects.Image {
   constructor(scene, x, y, target, opts) {
     super(scene, x, y, opts.texture);
-    this._target = target;
-    this._speed  = opts.speed;
-    this._onHit  = opts.onHit;
+    this._target    = target;
+    this._speed     = opts.speed;
+    this._onHit     = opts.onHit;
+    this._rotOffset = opts.rotOffset || 0;
     this.setDepth(4);
     scene.add.existing(this);
     scene.events.on('update', this._tick, this);
@@ -471,7 +479,7 @@ class Projectile extends Phaser.GameObjects.Image {
     const angle = Math.atan2(ty - this.y, tx - this.x);
     this.x += Math.cos(angle) * step;
     this.y += Math.sin(angle) * step;
-    this.setRotation(angle);
+    this.setRotation(angle + this._rotOffset);
   }
 
   destroy() {
@@ -528,8 +536,8 @@ class Mine extends Phaser.GameObjects.Image {
 
 // ─── SOLDIER ─────────────────────────────────────────────────────────────────
 export class Soldier extends Phaser.GameObjects.Sprite {
-  constructor(scene, x, y, stats, rallyX, rallyY) {
-    super(scene, x, y, 'soldier', 0);
+  constructor(scene, x, y, stats, rallyX, rallyY, spriteKey = 'soldier') {
+    super(scene, x, y, spriteKey, 0);
     this.alive        = true;
     this._hp          = stats.hp;
     this._maxHp       = stats.hp;
@@ -544,16 +552,17 @@ export class Soldier extends Phaser.GameObjects.Sprite {
     this._speed       = 2.5;
     this._critChance  = 0;
     this._critMult    = 3;
+    this._spriteKey   = spriteKey;
     this.setDisplaySize(28, 28).setDepth(3);
     scene.add.existing(this);
-    this._setAnim('soldier_idle');
+    this._setAnim(spriteKey + '_idle');
 
     this._barBg = scene.add.rectangle(x, y - 16, 24, 4, 0x330000).setDepth(4);
     this._barFg = scene.add.rectangle(x - 12, y - 16, 24, 4, 0x00e676).setOrigin(0, 0.5).setDepth(4);
   }
 
   _setAnim(key) {
-    if (key === 'soldier_attack') {
+    if (key === this._spriteKey + '_attack') {
       this._curAnim = key;
       this.play(key);
       return;
@@ -592,12 +601,11 @@ export class Soldier extends Phaser.GameObjects.Sprite {
       if (d > 28) {
         this.x += (dx / d) * this._speed;
         this.y += (dy / d) * this._speed;
-        this._setAnim('soldier_walk');
+        this._setAnim(this._spriteKey + '_walk');
         this.setFlipX(dx < 0);
       } else {
         if (time - this._atkTimer >= this._atkRate) {
-          this._setAnim('soldier_attack');
-          // Crit dos Assassinos
+          this._setAnim(this._spriteKey + '_attack');
           const isCrit = this._critChance > 0 && Math.random() < this._critChance;
           const dmg    = isCrit ? this._dmg * this._critMult : this._dmg;
           if (this._target.takeDamage(dmg, false, false)) {
@@ -605,8 +613,8 @@ export class Soldier extends Phaser.GameObjects.Sprite {
             this._target = null;
           }
           this._atkTimer = time;
-        } else if (this.anims.currentAnim?.key !== 'soldier_attack') {
-          this._setAnim('soldier_idle');
+        } else if (this.anims.currentAnim?.key !== this._spriteKey + '_attack') {
+          this._setAnim(this._spriteKey + '_idle');
         }
       }
     } else {
@@ -615,10 +623,10 @@ export class Soldier extends Phaser.GameObjects.Sprite {
       const d  = Math.sqrt(dx * dx + dy * dy);
       if (d > 6) {
         this.x += dx / d * (this._speed * 0.8); this.y += dy / d * (this._speed * 0.8);
-        this._setAnim('soldier_walk');
+        this._setAnim(this._spriteKey + '_walk');
         this.setFlipX(dx < 0);
       } else {
-        this._setAnim('soldier_idle');
+        this._setAnim(this._spriteKey + '_idle');
       }
     }
 
