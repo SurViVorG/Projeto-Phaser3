@@ -56,13 +56,22 @@ export default class Enemy extends Phaser.GameObjects.Container {
       }).setOrigin(0.5);
       this.add(mshield);
     }
+    this.isBoss = data.boss || false;
+    if (this.isBoss) {
+      const crown = scene.add.text(0, -data.size - 16, '👑', {
+        fontSize: '14px'
+      }).setOrigin(0.5);
+      this.add(crown);
+    }
 
     // ── Barra de vida ─────────────────────────────────────────────────────
+    const barW = this.isBoss ? data.size * 3 : data.size * 2;
+    this._barW = barW;
     const barBg = scene.add.rectangle(
-      0, -data.size - 8, data.size * 2, 5, 0x330000
+      0, -data.size - 8, barW, this.isBoss ? 7 : 5, this.isBoss ? 0x440000 : 0x330000
     );
     const barFg = scene.add.rectangle(
-      -data.size, -data.size - 8, data.size * 2, 5, 0x00e676
+      -barW / 2, -data.size - 8, barW, this.isBoss ? 7 : 5, this.isBoss ? 0xff1744 : 0x00e676
     ).setOrigin(0, 0.5);
     this._barFg = barFg;
     this.add([barBg, barFg]);
@@ -140,10 +149,13 @@ export default class Enemy extends Phaser.GameObjects.Container {
 
   updateBar() {
     const pct = Math.max(0, this.hp / this.maxHp);
-    const maxW = this.data_ref.size * 2;
-    this._barFg.setSize(maxW * pct, 5);
-    this._barFg.setX(-this.data_ref.size);
-    const color = pct > 0.6 ? 0x00e676 : pct > 0.3 ? 0xffeb3b : 0xef5350;
+    const maxW = this._barW || this.data_ref.size * 2;
+    const h = this.isBoss ? 7 : 5;
+    this._barFg.setSize(maxW * pct, h);
+    this._barFg.setX(-maxW / 2);
+    const color = this.isBoss
+      ? (pct > 0.5 ? 0xff1744 : pct > 0.25 ? 0xff6600 : 0xffcc00)
+      : (pct > 0.6 ? 0x00e676 : pct > 0.3 ? 0xffeb3b : 0xef5350);
     this._barFg.setFillStyle(color);
   }
 
@@ -160,12 +172,13 @@ export default class Enemy extends Phaser.GameObjects.Container {
   /** Inimigo ataca soldados que o bloqueiam */
   attackSoldiers(time) {
     if (!this._lastSoldierAtk) this._lastSoldierAtk = 0;
-    if (time - this._lastSoldierAtk < 1200) return;
+    const atkCd = this.isBoss ? 800 : 1200;
+    if (time - this._lastSoldierAtk < atkCd) return;
     this._lastSoldierAtk = time;
-    // Ataca o primeiro soldado vivo
+    const baseDmg = (this.data_ref.damage || 1) * 10;
+    const dmg = this.isBoss ? baseDmg * 3 : baseDmg;
     for (const s of this._soldiers) {
       if (s.alive) {
-        const dmg = (this.data_ref.damage || 1) * 10;
         s.takeDamage(dmg);
         break;
       }

@@ -311,6 +311,10 @@ export default class PreloadScene extends Phaser.Scene {
       dark_knight: { fn: humanoid, cfg: { body:'#1a1a1a', skin:'#3a3a3a', leg:'#111111', accent:'#8b0000', eyes:'#ff0000', headR:10, w:16, ears:false, tusks:false, horns:false, wings:false, robes:false, armor:true,  helmet:true,  staff:false, skeleton:false, slim:false } },
       demon:       { fn: humanoid, cfg: { body:'#8b0000', skin:'#cc2200', leg:'#6b0000', accent:'#ff6600', eyes:'#ffcc00', headR:10, w:16, ears:false, tusks:false, horns:true,  wings:true,  robes:false, armor:false, helmet:false, staff:false, skeleton:false, slim:false } },
       lich:        { fn: humanoid, cfg: { body:'#1a1a2e', skin:'#d0d0d0', leg:'#111122', accent:'#7fff00', eyes:'#7fff00', headR:9,  w:12, ears:false, tusks:false, horns:false, wings:false, robes:true,  armor:false, helmet:false, staff:true,  skeleton:true,  slim:true  } },
+      boss_forest: { fn: troll,    cfg: { body:'#8b4513', skin:'#cc8844', accent:'#ffd700' } },
+      boss_ruins:  { fn: golem,    cfg: { body:'#2a6090', skin:'#4a90c0', accent:'#4fc3f7' } },
+      boss_chaos:  { fn: humanoid, cfg: { body:'#b71c1c', skin:'#ff3333', leg:'#8b0000', accent:'#ff9100', eyes:'#ffff00', headR:12, w:18, ears:false, tusks:false, horns:true,  wings:true,  robes:false, armor:false, helmet:false, staff:false, skeleton:false, slim:false } },
+      boss_demon:  { fn: humanoid, cfg: { body:'#1a0a3a', skin:'#e0e0e0', leg:'#0a0a2a', accent:'#7c4dff', eyes:'#7c4dff', headR:10, w:14, ears:false, tusks:false, horns:false, wings:false, robes:true,  armor:false, helmet:false, staff:true,  skeleton:true,  slim:true  } },
     };
 
     for (const [type, { fn, cfg }] of Object.entries(defs)) {

@@ -64,12 +64,17 @@
     "necromancer": "Necromancer",
     "wyvern": "Wyvern",
     "demon": "Demon",
-    "lich": "Lich"
+    "lich": "Lich",
+    "boss_forest": "Troll King",
+    "boss_ruins": "Ancient Golem",
+    "boss_chaos": "Demon Lord",
+    "boss_demon": "Lich King"
   },
   "encyclopedia": {
     "title": "Encyclopedia",
     "towers": "Towers",
     "enemies": "Enemies",
+    "bosses": "Bosses",
     "powers": "Powers"
   },
   "gameover": {

@@ -10,7 +10,7 @@ export const LEVEL_WAVES = {
     [{type:'goblin',count:4,interval:700},{type:'orc',count:3,interval:1300}],
     [{type:'orc',count:4,interval:1100},{type:'harpy',count:3,interval:1000}],
     [{type:'orc_armored',count:3,interval:1400},{type:'troll',count:2,interval:1800},{type:'goblin_fast',count:5,interval:600}],
-    [{type:'troll',count:2,interval:1800},{type:'dark_knight',count:3,interval:1600},{type:'harpy',count:4,interval:900}]
+    [{type:'troll',count:2,interval:1800},{type:'dark_knight',count:3,interval:1600},{type:'harpy',count:4,interval:900},{type:'boss_forest',count:1,interval:0,preDelay:4000}]
   ],
   2: [
     // Começa suave — semelhante ao início do nível 1
@@ -20,7 +20,7 @@ export const LEVEL_WAVES = {
     [{type:'orc',count:4,interval:900},{type:'orc_armored',count:3,interval:1400}],
     [{type:'troll',count:3,interval:1600},{type:'harpy',count:4,interval:900},{type:'goblin_fast',count:5,interval:600}],
     [{type:'orc_armored',count:4,interval:1200},{type:'dark_knight',count:3,interval:1500},{type:'wyvern',count:3,interval:1100}],
-    [{type:'troll',count:3,interval:1500},{type:'necromancer',count:3,interval:1400},{type:'dark_knight',count:4,interval:1200},{type:'demon',count:2,interval:2500}]
+    [{type:'troll',count:3,interval:1500},{type:'necromancer',count:3,interval:1400},{type:'dark_knight',count:4,interval:1200},{type:'demon',count:2,interval:2500},{type:'boss_ruins',count:1,interval:0,preDelay:4000}]
   ],
   3: [
     [{type:'goblin',count:7,interval:900}],
@@ -31,7 +31,7 @@ export const LEVEL_WAVES = {
     [{type:'orc_armored',count:5,interval:1100},{type:'necromancer',count:4,interval:1300},{type:'wyvern',count:4,interval:1000}],
     [{type:'golem',count:2,interval:2500},{type:'dark_knight',count:5,interval:1200},{type:'wyvern',count:5,interval:900}],
     [{type:'troll',count:4,interval:1400},{type:'necromancer',count:5,interval:1200},{type:'demon',count:3,interval:2200}],
-    [{type:'golem',count:3,interval:2200},{type:'demon',count:4,interval:1800},{type:'lich',count:3,interval:2500}]
+    [{type:'golem',count:3,interval:2200},{type:'demon',count:4,interval:1800},{type:'lich',count:3,interval:2500},{type:'boss_chaos',count:1,interval:0,preDelay:4000}]
   ],
   4: [
     [{type:'goblin',count:8,interval:800}],
@@ -41,7 +41,7 @@ export const LEVEL_WAVES = {
     [{type:'golem',count:2,interval:2300},{type:'necromancer',count:5,interval:1200},{type:'wyvern',count:5,interval:900}],
     [{type:'golem',count:3,interval:2000},{type:'dark_knight',count:6,interval:1100},{type:'demon',count:3,interval:2000}],
     [{type:'golem',count:3,interval:1800},{type:'necromancer',count:6,interval:1100},{type:'demon',count:4,interval:1700},{type:'lich',count:3,interval:2300}],
-    [{type:'golem',count:4,interval:1800},{type:'demon',count:6,interval:1400},{type:'lich',count:4,interval:2000}]
+    [{type:'golem',count:4,interval:1800},{type:'demon',count:6,interval:1400},{type:'lich',count:4,interval:2000},{type:'boss_demon',count:1,interval:0,preDelay:5000}]
   ]
 };
 

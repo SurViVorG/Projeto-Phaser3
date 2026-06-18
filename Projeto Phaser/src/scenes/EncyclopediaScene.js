@@ -62,9 +62,9 @@ export default class EncyclopediaScene extends Phaser.Scene {
     this._tabObjs    = [];
     this._tabBtns    = {};
 
-    const TABS  = ['towers', 'enemies', 'powers'];
-    const ICONS = ['🏰', '👹', '⚡'];
-    const tabW  = 225, tabGap = 16;
+    const TABS  = ['towers', 'enemies', 'bosses', 'powers'];
+    const ICONS = ['🏰', '👹', '👑', '⚡'];
+    const tabW  = 180, tabGap = 12;
     const totalTabW = TABS.length * tabW + (TABS.length - 1) * tabGap;
     const tx0 = (W - totalTabW) / 2;
 
@@ -121,6 +121,7 @@ export default class EncyclopediaScene extends Phaser.Scene {
     Settings.playSfx(this, 'sfx_btn');
     if (tab === 'towers')  this._buildTowers();
     if (tab === 'enemies') this._buildEnemies();
+    if (tab === 'bosses')  this._buildBosses();
     if (tab === 'powers')  this._buildPowers();
   }
 
@@ -454,6 +455,110 @@ export default class EncyclopediaScene extends Phaser.Scene {
           fontFamily: 'monospace', fontSize: '9px', color: '#ffd080'
         }).setOrigin(0, 0.5));
       }
+    });
+  }
+
+  // ── ABA: BOSSES ──────────────────────────────────────────────────────────────
+
+  _buildBosses() {
+    const BOSS_KEYS = ['boss_forest', 'boss_ruins', 'boss_chaos', 'boss_demon'];
+    const LEVEL_NAMES = [
+      { pt: 'Floresta Sombria', en: 'Dark Forest' },
+      { pt: 'Ruínas Antigas',   en: 'Ancient Ruins' },
+      { pt: 'Fortaleza do Caos', en: 'Chaos Fortress' },
+      { pt: 'Covil do Demônio', en: 'Demon Lair' }
+    ];
+    const lang = I18n.getLang();
+    const isEN = lang === 'en';
+
+    const PX = 38, PY = 130;
+    const CW = (1280 - 2 * PX - 24) / 2;
+    const CH = 254;
+
+    BOSS_KEYS.forEach((key, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const x0 = PX + col * (CW + 24);
+      const y0 = PY + row * (CH + 16);
+      const data = ENEMY_DATA[key];
+      const color = '#' + data.color.toString(16).padStart(6, '0');
+      const colHex = data.color;
+      const lvlName = isEN ? LEVEL_NAMES[idx].en : LEVEL_NAMES[idx].pt;
+
+      const bg = this.add.graphics();
+      bg.fillStyle(0x0e0e20, 1);
+      bg.fillRoundedRect(x0, y0, CW, CH, 10);
+      bg.lineStyle(2, colHex, 0.6);
+      bg.strokeRoundedRect(x0, y0, CW, CH, 10);
+      this._r(bg);
+
+      try {
+        const spr = this.add.sprite(x0 + 40, y0 + 55, key, 0).setDisplaySize(52, 52);
+        this._r(spr);
+      } catch (_) {}
+
+      this._r(this.add.text(x0 + 40, y0 + 88, '👑', {
+        fontSize: '14px'
+      }).setOrigin(0.5));
+
+      this._r(this.add.text(x0 + 76, y0 + 22, I18n.t('enemies.' + key), {
+        fontFamily: 'Georgia, serif', fontSize: '18px', color,
+        stroke: '#000', strokeThickness: 2
+      }).setOrigin(0, 0.5));
+
+      this._r(this.add.text(x0 + 76, y0 + 44, (isEN ? 'Level ' : 'Nível ') + (idx + 1) + ' — ' + lvlName, {
+        fontFamily: 'monospace', fontSize: '11px', color: '#888'
+      }).setOrigin(0, 0.5));
+
+      this._r(this.add.text(x0 + 76, y0 + 62, (isEN ? 'Last wave boss' : 'Boss da última vaga'), {
+        fontFamily: 'monospace', fontSize: '10px', color: '#666'
+      }).setOrigin(0, 0.5));
+
+      const div = this.add.graphics();
+      div.lineStyle(1, colHex, 0.25);
+      div.lineBetween(x0 + 12, y0 + 78, x0 + CW - 12, y0 + 78);
+      this._r(div);
+
+      const pct = (v) => Math.round((v || 0) * 100) + '%';
+      const statLines = [
+        ['❤ HP',           String(data.hp),       '#ef5350'],
+        ['⚡ ' + (isEN ? 'Speed' : 'Vel.'),  String(data.speed), '#fdd835'],
+        ['🛡 ' + (isEN ? 'Armor' : 'Arm.'),  pct(data.armor),   '#90caf9'],
+        ['✨ ' + (isEN ? 'Magic' : 'Mag.'),  pct(data.magicArmor), '#ce93d8'],
+        ['💰 ' + (isEN ? 'Reward' : 'Rec.'), data.reward + 'g', '#00e676'],
+        ['💀 ' + (isEN ? 'Damage' : 'Dano'), String(data.damage), '#ff8a80'],
+      ];
+
+      statLines.forEach(([lbl, val, clr], si) => {
+        const sx = si < 3 ? x0 + 16 : x0 + CW / 2 + 8;
+        const sy = y0 + 92 + (si % 3) * 22;
+        this._r(this.add.text(sx, sy, lbl + '  ' + val, {
+          fontFamily: 'monospace', fontSize: '11px', color: clr
+        }).setOrigin(0, 0.5));
+      });
+
+      const specY = y0 + 164;
+      const spec = [];
+      if (data.flying)     spec.push('✈ ' + (isEN ? 'Flying' : 'Voador'));
+      if (data.heavyArmor) spec.push('🛡 ' + (isEN ? 'Heavy Armor' : 'Arm. Pesada'));
+      if (data.regen)      spec.push('♻ ' + (isEN ? 'Regen' : 'Regen') + ' ' + data.regen + '/s');
+      if (data.magicArmor >= 0.5) spec.push('✨ ' + (isEN ? 'Magic Resist' : 'Resist. Mag.'));
+
+      if (spec.length) {
+        const specBg = this.add.graphics();
+        specBg.fillStyle(colHex, 0.08);
+        specBg.fillRoundedRect(x0 + 10, specY - 4, CW - 20, 22, 4);
+        this._r(specBg);
+        this._r(this.add.text(x0 + CW / 2, specY + 6, spec.join('  ·  '), {
+          fontFamily: 'monospace', fontSize: '10px', color
+        }).setOrigin(0.5));
+      }
+
+      // Size indicator
+      this._r(this.add.text(x0 + CW - 16, y0 + 22, '★ BOSS', {
+        fontFamily: 'monospace', fontSize: '11px', color: '#ffd700',
+        stroke: '#000', strokeThickness: 1
+      }).setOrigin(1, 0.5));
     });
   }
 

@@ -439,6 +439,7 @@ export default class GameScene extends Phaser.Scene {
     const spawnList = [];
     let delay = 0;
     for (const group of waveDef) {
+      if (group.preDelay) delay += group.preDelay;
       for (let i = 0; i < group.count; i++) {
         spawnList.push({ type: group.type, delay });
         delay += group.interval;
@@ -466,6 +467,11 @@ export default class GameScene extends Phaser.Scene {
     const enemy = new Enemy(this, type, this._path);
     enemy.setDepth(3);
     this._enemies.push(enemy);
+    if (ENEMY_DATA[type]?.boss) {
+      this.cameras.main.shake(500, 0.012);
+      this.floatText(640, 300, '👑 BOSS — ' + (ENEMY_DATA[type].label || type) + '!', '#ff1744');
+      Settings.playSfx(this, 'sfx_wave_start');
+    }
   }
 
   onEnemyKilled(enemy) {
@@ -521,15 +527,9 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 0; i < 4; i++) {
       const off = offsets[i];
       const sx = x + off.x, sy = y + off.y;
-      // Soldado completo — bloqueia e combate como os das barracas
       const sol = new Soldier(this, sx, sy, reinfStats, sx, sy);
+      sol._reinfTimeLeft = 18000;
       this._reinfSoldiers.push(sol);
-
-      // Auto-destruir após 18 segundos
-      this.time.delayedCall(18000, () => {
-        if (sol.alive) sol.die();
-        this._reinfSoldiers = this._reinfSoldiers.filter(s => s !== sol);
-      });
     }
     this.floatText(x, y - 40, '⚔ Reforços!', '#42a5f5');
   }
@@ -877,9 +877,16 @@ export default class GameScene extends Phaser.Scene {
     // Torres — passam dt para escalar cooldowns no modo rápido
     for (const t of this._towers) t.update(time, this._enemies, this._fastMode ? 2 : 1);
 
-    // Soldados de reforço
+    // Soldados de reforço — tempo de vida só decrementa durante waves
     if (this._reinfSoldiers) {
-      this._reinfSoldiers = this._reinfSoldiers.filter(s => s.alive);
+      this._reinfSoldiers = this._reinfSoldiers.filter(s => {
+        if (!s.alive) return false;
+        if (s._reinfTimeLeft !== undefined && this.waveActive) {
+          s._reinfTimeLeft -= dt;
+          if (s._reinfTimeLeft <= 0) { s.die(); return false; }
+        }
+        return true;
+      });
       for (const s of this._reinfSoldiers) s.update(time, this._enemies);
     }
   }

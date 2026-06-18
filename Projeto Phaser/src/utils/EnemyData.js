@@ -92,7 +92,37 @@ export const ENEMY_DATA = {
   lich: {
     key: 'lich', color: 0x4a148c,
     hp: 560,  speed: 55,  reward: 100, damage: 3, size: 30,
-    armor: 0.1, magicArmor: 0.55,      // Quase imune a magia
+    armor: 0.1, magicArmor: 0.55,
     label: 'Lich'
+  },
+
+  // ── BOSSES ────────────────────────────────────────────────────────────────
+  boss_forest: {
+    key: 'boss_forest', color: 0xff6f00,
+    hp: 1500, speed: 35, reward: 200, damage: 8, size: 38,
+    armor: 0.25, magicArmor: 0.1,
+    regen: 15, boss: true,
+    label: 'Rei Troll'
+  },
+  boss_ruins: {
+    key: 'boss_ruins', color: 0x4fc3f7,
+    hp: 2500, speed: 25, reward: 350, damage: 10, size: 42,
+    armor: 0.55, magicArmor: 0.15,
+    heavyArmor: true, boss: true,
+    label: 'Golem Ancião'
+  },
+  boss_chaos: {
+    key: 'boss_chaos', color: 0xff1744,
+    hp: 2200, speed: 50, reward: 450, damage: 12, size: 40,
+    armor: 0.3, magicArmor: 0.35,
+    flying: true, boss: true,
+    label: 'Senhor Demônio'
+  },
+  boss_demon: {
+    key: 'boss_demon', color: 0x7c4dff,
+    hp: 3500, speed: 35, reward: 600, damage: 15, size: 42,
+    armor: 0.2, magicArmor: 0.6,
+    regen: 8, boss: true,
+    label: 'Rei Lich'
   }
 };

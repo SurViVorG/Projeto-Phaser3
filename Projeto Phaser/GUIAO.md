@@ -31,7 +31,7 @@
 
 ```bash
 # Entrar na pasta do projeto (já criada)
-cd kingdom-rush-tp2
+cd Projeto Phaser
 
 # Instalar dependências (Phaser 3.80 + Vite 5)
 npm install

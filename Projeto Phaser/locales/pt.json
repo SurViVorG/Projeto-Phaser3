@@ -64,12 +64,17 @@
     "necromancer": "Necromante",
     "wyvern": "Wyvern",
     "demon": "Demônio",
-    "lich": "Lich"
+    "lich": "Lich",
+    "boss_forest": "Rei Troll",
+    "boss_ruins": "Golem Ancião",
+    "boss_chaos": "Senhor Demônio",
+    "boss_demon": "Rei Lich"
   },
   "encyclopedia": {
     "title": "Enciclopédia",
     "towers": "Torres",
     "enemies": "Inimigos",
+    "bosses": "Bosses",
     "powers": "Poderes"
   },
   "gameover": {
