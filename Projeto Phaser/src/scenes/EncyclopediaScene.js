@@ -250,6 +250,73 @@ export default class EncyclopediaScene extends Phaser.Scene {
         }).setOrigin(0.5, 0.5));
       });
     });
+
+    // ── Caminhos Nível IV ──────────────────────────────────────────
+    if (def.paths) {
+      const pathY = ROW_Y0 + rows.length * ROW_H + 6;
+
+      const pdiv = this.add.graphics();
+      pdiv.lineStyle(1, 0x2a2a4a, 1);
+      pdiv.lineBetween(DX + 10, pathY, DX + DW - 10, pathY);
+      this._r(pdiv);
+
+      this._r(this.add.text(DX + DW / 2, pathY + 14, '⚔ Nível IV — Caminhos', {
+        fontFamily: 'Georgia, serif', fontSize: '14px', color: '#c8960c'
+      }).setOrigin(0.5));
+
+      const cardW = (DW - 54) / 2;
+      const cardY = pathY + 30;
+      const cardH = DY + DH - cardY - 8;
+
+      ['A', 'B'].forEach((p, pi) => {
+        const pd = def.paths[p];
+        const cx = DX + 18 + pi * (cardW + 18);
+        const labelColor = p === 'A' ? '#f0c040' : '#42a5f5';
+        const bgColor    = p === 'A' ? 0x1a1400 : 0x0a1428;
+        const borderColor = p === 'A' ? 0xf0c040 : 0x42a5f5;
+
+        const cbg = this.add.graphics();
+        cbg.fillStyle(bgColor, 0.85);
+        cbg.fillRoundedRect(cx, cardY, cardW, cardH, 8);
+        cbg.lineStyle(1, borderColor, 0.5);
+        cbg.strokeRoundedRect(cx, cardY, cardW, cardH, 8);
+        this._r(cbg);
+
+        const texKey = 'tower_' + key + '_4' + p.toLowerCase();
+        if (this.textures.exists(texKey)) {
+          this._r(this.add.image(cx + 28, cardY + 24, texKey).setDisplaySize(38, 38));
+        }
+
+        this._r(
+          this.add.text(cx + 56, cardY + 14, pd.label, {
+            fontFamily: 'Georgia, serif', fontSize: '15px', color: labelColor,
+            stroke: '#000', strokeThickness: 1
+          }).setOrigin(0, 0.5),
+          this.add.text(cx + cardW - 12, cardY + 14, pd.cost + 'g', {
+            fontFamily: 'monospace', fontSize: '13px', color: '#fdd835'
+          }).setOrigin(1, 0.5),
+          this.add.text(cx + 56, cardY + 34, pd.description, {
+            fontFamily: 'monospace', fontSize: '10px', color: '#bbb'
+          }).setOrigin(0, 0.5)
+        );
+
+        const statsY = cardY + 52;
+        const pStats = this._pathStats(key, pd);
+        pStats.forEach(([lbl, val], si) => {
+          this._r(this.add.text(cx + 14, statsY + si * 16, lbl, {
+            fontFamily: 'monospace', fontSize: '10px', color: '#777'
+          }).setOrigin(0, 0.5));
+          this._r(this.add.text(cx + cardW - 12, statsY + si * 16, val, {
+            fontFamily: 'monospace', fontSize: '10px', color: '#ddd'
+          }).setOrigin(1, 0.5));
+        });
+
+        this._r(this.add.text(cx + 14, statsY + pStats.length * 16 + 4,
+          'Venda: ' + sellValue(key, 3, p) + 'g', {
+          fontFamily: 'monospace', fontSize: '10px', color: '#777'
+        }).setOrigin(0, 0.5));
+      });
+    }
   }
 
   _towerRows(key, def) {
@@ -291,6 +358,33 @@ export default class EncyclopediaScene extends Phaser.Scene {
       );
     }
 
+    return rows;
+  }
+
+  _pathStats(key, pd) {
+    if (key === 'barracks') {
+      const rows = [
+        ['HP soldado',  String(pd.hp)],
+        ['Dano/sold.',  String(pd.soldierDmg)],
+        ['Soldados',    String(pd.soldiers)],
+        ['Respawn',     (pd.respawnDelay / 1000) + 's'],
+      ];
+      if (pd.critChance) rows.push(['Crítico', Math.round(pd.critChance * 100) + '% ×' + pd.critMult]);
+      if (pd.soldierSpeed) rows.push(['Velocidade', pd.soldierSpeed + '×']);
+      return rows;
+    }
+    const rows = [];
+    if (pd.damage !== undefined) rows.push(['Dano', String(pd.damage)]);
+    if (pd.range)      rows.push(['Alcance', pd.range + 'px']);
+    if (pd.fireRate)   rows.push(['Ataques/s', (1000 / pd.fireRate).toFixed(1) + '/s']);
+    if (pd.splashRadius) rows.push(['Splash', pd.splashRadius + 'px']);
+    if (pd.piercing)     rows.push(['Perfurante', 'Sim']);
+    if (pd.ignoreArmor)  rows.push(['Ignora armadura', 'Sim']);
+    if (pd.hitsFlying)   rows.push(['Atinge voadores', 'Sim']);
+    if (pd.slowField)    rows.push(['Slow permanente', (pd.slowMs / 1000) + 's']);
+    if (pd.necromancy)   rows.push(['Necromancia', '55% chance']);
+    if (pd.maxMines)     rows.push(['Minas máx.', String(pd.maxMines)]);
+    if (pd.mineDelay)    rows.push(['Intervalo mina', (pd.mineDelay / 1000) + 's']);
     return rows;
   }
 

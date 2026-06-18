@@ -81,8 +81,8 @@ export const TOWER_DATA = {
            damage: 120, range: 265, fireRate: 2000, splashRadius: 160, hitsFlying: true,
            description: 'Atinge voadores · splash aéreo' },
       B: { label: 'Minas',   labelEN: 'Land Mines', cost: 250,
-           damage: 200, range: 245, splashRadius: 80, mineDelay: 5000, maxMines: 3,
-           description: 'Coloca minas no caminho (máx 3)' }
+           damage: 200, range: 245, splashRadius: 80, mineDelay: 4000, maxMines: 10,
+           description: 'Coloca minas auto no caminho (máx 10)' }
     }
   }
 };

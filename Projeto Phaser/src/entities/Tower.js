@@ -1,4 +1,5 @@
 import { TOWER_DATA } from '../utils/TowerData.js';
+import { PATH_TILES } from '../utils/PathData.js';
 import Settings from '../utils/Settings.js';
 
 const GAME_W = 1150;
@@ -243,21 +244,17 @@ export class ArtilleryTower extends Tower {
   }
 
   update(time, enemies) {
-    // Minas: colocar minas em vez de disparar projéteis
     if (this.chosenPath === 'B') {
       this._mines = this._mines.filter(m => !m._triggered && m.active);
       for (const mine of this._mines) mine.checkTrigger(enemies);
 
-      if (this._mines.length < (this.stats.maxMines || 3)) {
-        if (!enemies || enemies.length === 0) return;
-        if (this.target && (!this.target.alive || !this.inRange(this.target))) this.target = null;
-        if (!this.target) this.target = this.findTarget(enemies);
-        if (!this.target) return;
-
-        if (time - this.lastFired >= (this.stats.mineDelay || 5000)) {
-          this._placeMine(this.target.x, this.target.y);
-          this.lastFired = time;
-          this.target = null;
+      if ((this.scene.waveActive || this.scene._sandbox) && this._mines.length < (this.stats.maxMines || 10)) {
+        if (time - this.lastFired >= (this.stats.mineDelay || 4000)) {
+          const tile = this._randomPathTileInRange();
+          if (tile) {
+            this._placeMine(tile.x, tile.y);
+            this.lastFired = time;
+          }
         }
       }
       return;
@@ -265,10 +262,55 @@ export class ArtilleryTower extends Tower {
     super.update(time, enemies);
   }
 
-  _placeMine(x, y) {
-    const mine = new Mine(this.scene, x, y, this);
-    this._mines.push(mine);
-    this.scene.tweens.add({ targets: mine, scaleX: 1.3, scaleY: 1.3, duration: 120, yoyo: true });
+  _randomPathTileInRange() {
+    const tiles = PATH_TILES[this.scene.level] ?? [];
+    const range = this.stats.range || 245;
+    const valid = tiles.filter(t => {
+      if (Phaser.Math.Distance.Between(this.x, this.y, t.x, t.y) > range) return false;
+      for (const m of this._mines) {
+        if (m.active && !m._triggered && Math.abs(m.x - t.x) < 24 && Math.abs(m.y - t.y) < 24) return false;
+      }
+      return true;
+    });
+    if (valid.length === 0) return null;
+    return Phaser.Utils.Array.GetRandom(valid);
+  }
+
+  _placeMine(tx, ty) {
+    const dist = Phaser.Math.Distance.Between(this.x, this.y, tx, ty);
+    const dur  = 300 + dist * 1.2;
+    const arc  = this.scene.add.image(this.x, this.y, 'mine')
+      .setDepth(10).setDisplaySize(16, 16).setAlpha(0.85);
+
+    const shadow = this.scene.add.ellipse(this.x, this.y + 4, 12, 6, 0x000000, 0.3)
+      .setDepth(2);
+
+    this.scene.tweens.add({
+      targets: shadow, x: tx, y: ty + 4, duration: dur, ease: 'Linear',
+      onComplete: () => shadow.destroy()
+    });
+
+    this.scene.tweens.add({
+      targets: arc, x: tx, duration: dur, ease: 'Linear'
+    });
+    this.scene.tweens.add({
+      targets: arc, y: ty, duration: dur, ease: 'Sine.easeIn',
+      onUpdate: (tw) => {
+        const p = tw.progress;
+        const peakY = Math.min(this.y, ty) - 40 - dist * 0.15;
+        const baseY = this.y + (ty - this.y) * p;
+        arc.y = baseY + (peakY - baseY) * 4 * p * (1 - p);
+      },
+      onComplete: () => {
+        arc.destroy();
+        const mine = new Mine(this.scene, tx, ty, this);
+        this._mines.push(mine);
+        this.scene.tweens.add({
+          targets: mine, scaleX: 1.3, scaleY: 1.3, duration: 100, yoyo: true
+        });
+        Settings.playSfx(this.scene, 'sfx_place_tower');
+      }
+    });
   }
 
   fire(enemy) {
