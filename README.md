@@ -27,29 +27,34 @@
 **Objetivo:** Impedir que os inimigos atravessem o mapa e alcancem o castelo. Constrói e melhora torres ao longo do caminho para eliminar todas as vagas de inimigos.
 
 **Regras:**
-- Começas com **20 vidas** e ouro consoante o nível que te encontras
-- Cada inimigo que chega ao castelo retira vidas (1–3 conforme o tipo)
-- Ganhas ouro ao eliminar inimigos
-- Usas ouro para construir e melhorar torres
+- Começas com **20 vidas** e ouro consoante o nível (250–375g)
+- Cada inimigo que chega ao castelo retira vidas (1–15 conforme o tipo)
+- Ganhas ouro ao eliminar inimigos (bónus por wave concluída)
+- Usas ouro para construir, melhorar e especializar torres
 - O jogo termina quando as vidas chegam a 0 (Derrota) ou todas as vagas são eliminadas (Vitória)
 
 **Funcionalidades implementadas:**
-- 4 tipos de torres (Barracas, Arqueiros, Magos, Artilharia) com 3 níveis cada
-- 12 tipos de inimigos (Goblin, Goblin Veloz, Orc, Orc Blindado, Troll, Harpia, Golem, Cavaleiro Negro, Necromante, Wyvern, Demônio, Lich) com comportamentos distintos
-- 4 níveis com caminhos únicos, dificuldade crescente e vagas balanceadas (6–9 vagas por nível)
-- Ouro inicial ajustado por nível (250g nos níveis 1–2, 300g no 3, 375g no 4)
-- Sistema de armadura física e mágica nos inimigos; inimigos voadores ignoram barracas e artilharia
-- Barracas com soldados que bloqueiam inimigos (respawn automático após 8s)
-- Ponto de rally arrastável para reposicionar soldados na pista
-- 2 poderes especiais: Reforços (cooldown 30s) e Meteorito (cooldown 45s)
-  - Cooldown pausa entre vagas e escala com o botão ×2
-- Suporte multilíngue PT / EN com seletor acessível
-- Múltiplas cenas: Boot → Preload → Menu → Opções → Mapa → Jogo → Pausa → GameOver/Vitória
-- HUD completo: ouro, vidas, vaga atual, pontuação
-- Botão acelerar (×2) e iniciar vaga
-- Painel de upgrade/venda de torres com círculo de alcance
-- Câmara com shake no meteorito
-- Partículas de faíscas, sangue e magia
+- 4 tipos de torres com 3 níveis + **2 caminhos elite nível IV** (8 especializações)
+  - Barracas: Cavaleiros (HP×3) / Assassinos (crit×3)
+  - Arqueiros: Ranger (perfurante) / Sniper (ignora armadura)
+  - Mago: Gelo (slow+AOE) / Necromante (revive mortos)
+  - Artilharia: Foguete (anti-aéreo) / Minas (armadilhas automáticas)
+- **16 tipos de inimigos** (12 normais + 4 bosses) com comportamentos distintos
+  - Armadura física e mágica, voadores, regeneração, armadura pesada
+  - Bosses com 👑 coroa, barra de vida especial, dano devastador
+- 4 níveis com caminhos únicos, dificuldade crescente (6–9 vagas por nível)
+- **Sistema de estrelas** (★★★ sem vidas perdidas · ★★ ≤5 · ★ completou)
+- 2 poderes especiais: **Reforços** (drag & drop, cooldown 30s) e **Meteorito** (cooldown 45s)
+  - Cooldowns pausam entre vagas; reforços não perdem tempo de vida entre waves
+- **Enciclopédia** 📖 com 4 abas (Torres, Inimigos, Bosses, Poderes)
+- **Modo Sandbox** — ouro/vidas infinitos, spawner manual de 16 tipos de inimigos
+- Prévia da próxima onda com tooltip no portal de entrada
+- Suporte multilíngue **PT / EN**
+- 9 cenas: Boot → Preload → Menu → Opções → Mapa → Jogo → Pausa → GameOver/Vitória → Enciclopédia
+- HUD completo: ouro, vidas, wave, score, poderes, upgrade/sell, caminho IV
+- Sprites procedurais animados (inimigos 4 frames walk, soldados 11 frames)
+- 16 ficheiros de áudio OGG (SFX + 2 músicas de fundo)
+- Partículas (faíscas, sangue, magia), camera shake (meteorito, boss), fade entre cenas
 
 ---
 
@@ -57,20 +62,22 @@
 
 | Ação | Controlo |
 |------|----------|
-| Construir Barracas | Clique no painel lateral → slot no mapa · ou tecla **1** |
-| Construir Arqueiros | Clique no painel lateral → slot no mapa · ou tecla **2** |
-| Construir Magos | Clique no painel lateral → slot no mapa · ou tecla **3** |
-| Construir Artilharia | Clique no painel lateral → slot no mapa · ou tecla **4** |
-| Selecionar torre | Clique na torre (mostra painel upgrade/venda) |
-| Reposicionar soldados (barracas) | Arrastar a bandeira ⚑ — só fica na pista |
+| Construir Barracas | Painel lateral ou tecla **1** → clique num slot |
+| Construir Arqueiros | Painel lateral ou tecla **2** → clique num slot |
+| Construir Magos | Painel lateral ou tecla **3** → clique num slot |
+| Construir Artilharia | Painel lateral ou tecla **4** → clique num slot |
+| Selecionar torre | Clique na torre (mostra painel upgrade/sell/caminho) |
+| Escolher caminho IV | Clique no botão A ou B no painel (nível III) |
+| Reposicionar soldados | Menu da torre → "⚑ Rally" → clique na pista |
 | Cancelar construção | **ESC** |
-| Iniciar vaga | Botão **▶ Iniciar Vaga** ou aguardar |
-| Acelerar jogo | Botão **⏩ x2** |
+| Iniciar vaga | Botão **▶ Iniciar Vaga** |
+| Acelerar jogo | Botão **⏩ ×2** |
 | Poder — Reforços | Arrastar ícone para o campo (cooldown 30s) |
 | Poder — Meteorito | Arrastar ícone para o alvo (cooldown 45s) |
-| **Pausa** | Tecla **P** ou botão ⏸ no HUD |
+| Pausa | Tecla **P** ou botão ⏸ |
 | Reiniciar | Tecla **R** ou menu de pausa |
-| Mudar língua | Seletor PT / EN no menu, mapa e opções da pausa |
+| Mudar língua | Seletor PT / EN no menu, mapa ou pausa |
+| **Sandbox** — spawnar inimigos | ◀/▶ para tipo e quantidade → "⚔ Spawnar" |
 
 ---
 
@@ -82,13 +89,16 @@
 ### Passos
 
 ```bash
-# 1. Instalar dependências
+# 1. Entrar na pasta do projeto
+cd "Projeto Phaser"
+
+# 2. Instalar dependências
 npm install
 
-# 2. Correr em modo desenvolvimento
+# 3. Correr em modo desenvolvimento
 npm run dev
 
-# 3. Abrir no browser
+# 4. Abrir no browser
 # → http://localhost:5173
 ```
 
@@ -106,75 +116,103 @@ npm run build
 ## Aspectos Multimédia
 
 ### Imagens / Sprites
-- **Ficheiros PNG reais** em `public/assets/images/` (~35 sprites, ~14 KB no total)
-- Torres (4 tipos × 3 níveis), 12 tipos de inimigos, projéteis, tiles de chão/caminho, castelo, portal e soldado
-- Resolução proporcional ao uso: torres 48×48, inimigos dimensionados ao seu `size`, tiles 64×64 — sem PNGs sobredimensionados
-- Carregados no `PreloadScene.preload()` com `this.load.image()`
-- Elementos puramente de UI (círculo de alcance, explosão, partículas, ícones) continuam a ser gerados em runtime no `PreloadScene.generateUITextures()` por serem triviais e não justificarem ficheiro
+- **32 ficheiros PNG** em `public/assets/images/` (~14 KB total)
+  - 12 torres (4 tipos × 3 níveis): `tower_barracks.png`, `tower_barracks_2.png`, ...
+  - 12 inimigos: `goblin.png`, `orc.png`, `demon.png`, ...
+  - 3 projéteis: `proj_arrow.png`, `proj_magic.png`, `proj_cannon.png`
+  - 5 utilitários: `tile_ground.png`, `tile_path.png`, `castle.png`, `entry_portal.png`, `soldier.png`
+- **Geração procedural em runtime** — `src/scenes/PreloadScene.js` (~1000 linhas):
+  - Todos os sprites são **desenhados via Canvas 2D API** e registados como texturas Phaser
+  - 16 spritesheets de inimigos (4 frames walk cada) usando 5 funções de desenho reutilizáveis (`humanoid`, `troll`, `harpy`, `golem`, `wyvern`) parametrizadas por cores, tamanhos e flags (orelhas, presas, cornos, asas, manto, armadura, elmo, cajado, esqueleto)
+  - 20 texturas de torres (12 base + 8 elite nível IV) de 48×48 px cada
+  - 3 spritesheets de soldados (11 frames: idle×2, walk×4, attack×2, die×3) — normal, cavaleiro dourado, assassino encapuzado
+  - ~15 texturas de UI: círculo de alcance, explosão, partículas, mina (18×18), foguete (10×20), ícones
+  - Os PNGs servem de fallback; as texturas procedurais **substituem-nos** com `textures.remove()` + `textures.addCanvas()`
 
 ### Áudio
-- **15 efeitos sonoros + 2 músicas** de fundo em `public/assets/audio/`, formato **OGG Vorbis** (~130 KB no total)
-- Eventos com som: tiro de flecha/magia/canhão, moeda, explosão, morte de inimigo, perda de vida, início de vaga, clique de botão, vitória, derrota, colocar torre, upgrade, meteorito, reforços
-- Música de menu (calma) e música de batalha (tensa), ambas em loop, geridas por `Settings.playMusic()`
-- Volume e ligar/desligar configuráveis nas Opções e no menu de Pausa, persistidos em `localStorage`
-- Carregados no `PreloadScene.preload()` com `this.load.audio()`
+- **16 ficheiros OGG** em `public/assets/audio/` (~130 KB total)
+  - 14 SFX: tiro (flecha/magia/canhão), moeda, explosão, morte de inimigo, vida perdida, início de vaga, clique de botão, colocar torre, upgrade, meteorito, reforços, vitória, derrota
+  - 2 músicas de fundo: menu (calma) + batalha (tensa), ambas em loop contínuo
+- Reprodução centralizada em `src/utils/Settings.js` via `Settings.playSfx()` e `Settings.playMusic()`
+- Volume e on/off configuráveis nas Opções e no menu de Pausa, persistidos em `localStorage`
+
+### Tipografia
+- **Sem fontes externas** — usa exclusivamente fontes de sistema:
+  - `Georgia, serif` — títulos, botões, nomes de torres, textos narrativos
+  - `monospace` — stats numéricos, dados técnicos, HUD, hotkeys
+- Definidas inline em cada `scene.add.text()` via propriedade `fontFamily`
 
 ### Formato e justificação
 | Asset | Formato | Justificação |
 |-------|---------|----|
 | Sprites | PNG-32 com transparência | Canal alpha necessário; ficheiros minúsculos |
-| Efeitos sonoros | OGG Vorbis q3 | Boa compressão, suporte universal nos browsers |
-| Música de fundo | OGG Vorbis q3 | Qualidade aceitável, ficheiro pequeno (~15 KB) |
+| Efeitos sonoros | OGG Vorbis | Boa compressão, suporte universal nos browsers |
+| Música de fundo | OGG Vorbis | Qualidade aceitável, ficheiro pequeno (~15 KB) |
+| Fontes | Sistema (Georgia, monospace) | Disponíveis em todos os browsers; sem download |
 
-**Total de assets:** ~145 KB (muito abaixo do limite de 10 MB)
+**Total de assets estáticos:** ~145 KB (muito abaixo do limite de 10 MB)
 
 ---
 
 ## Estrutura do Projeto
 
 ```
-kingdom-rush-tp2/
-├── index.html
-├── package.json
+Projeto Phaser/
+├── index.html                 ← página HTML única (carrega src/main.js)
+├── package.json               ← dependências: phaser 3.80, vite 5
 ├── vite.config.js
 ├── .gitignore
-├── README.md
+├── GUIAO.md                   ← guião técnico detalhado com referências ao código
+├── ROADMAP.md                 ← plano de features e progresso
+│
 ├── locales/
-│   ├── pt.json          ← traduções português
-│   └── en.json          ← traduções inglês
-├── public/
-│   └── assets/
-│       ├── images/      ← 32 sprites PNG (torres, inimigos, tiles…)
-│       ├── audio/       ← 17 ficheiros OGG (15 SFX + 2 músicas)
-│       ├── spritesheets/← (reservado para animações futuras)
-│       └── fonts/       ← (reservado para bitmap fonts)
+│   ├── pt.json                ← traduções português (chaves hierárquicas)
+│   └── en.json                ← traduções inglês
+│
+├── public/assets/
+│   ├── images/                ← 32 PNGs (torres, inimigos, projéteis, tiles)
+│   └── audio/                 ← 16 OGGs (14 SFX + 2 músicas)
+│
 └── src/
-    ├── main.js          ← config Phaser + registo de cenas
+    ├── main.js                ← config Phaser (1280×720, Arcade) + registo de 9 cenas
+    │
     ├── scenes/
-    │   ├── BootScene.js
-    │   ├── PreloadScene.js  ← carrega imagens + áudio reais
-    │   ├── MenuScene.js
-    │   ├── OptionsScene.js
-    │   ├── MapScene.js
-    │   ├── GameScene.js
-    │   ├── PauseScene.js    ← menu de pausa (continuar/reiniciar/opções/menu)
-    │   ├── GameOverScene.js
-    │   └── VictoryScene.js
+    │   ├── BootScene.js           ← inicialização, transita para Preload
+    │   ├── PreloadScene.js        ← carrega assets + geração procedural (~1000 linhas)
+    │   │                            generateEnemySpritesheets() — 16 inimigos animados
+    │   │                            generateTowerTextures() — 12 torres base
+    │   │                            generateTowerLevel4Textures() — 8 torres elite
+    │   │                            generateSoldierSpritesheet() — soldado (11 frames)
+    │   │                            generateEliteSoldierSpritesheets() — cavaleiro + assassino
+    │   │                            generateUITextures() — ícones, partículas, mina, foguete
+    │   ├── MenuScene.js           ← menu principal (Jogar, Opções, Créditos)
+    │   ├── OptionsScene.js        ← música, SFX, números de dano, língua
+    │   ├── MapScene.js            ← 4 nós de nível + modal (Normal/Sandbox) + Enciclopédia
+    │   ├── GameScene.js           ← lógica principal (~890 linhas): mapa, waves, torres,
+    │   │                            inimigos, poderes, sandbox, bosses
+    │   ├── PauseScene.js          ← overlay de pausa (continuar/reiniciar/opções/menu)
+    │   ├── GameOverScene.js       ← ecrã de derrota
+    │   ├── VictoryScene.js        ← ecrã de vitória + sistema de estrelas
+    │   └── EncyclopediaScene.js   ← 4 abas: Torres, Inimigos, Bosses, Poderes
+    │
     ├── entities/
-    │   ├── Enemy.js     ← inimigos (armadura física/mágica, voadores)
-    │   ├── Tower.js     ← torres + projéteis + soldados (combate)
-    │   └── HUD.js       ← interface de jogo completa
+    │   ├── Enemy.js           ← classe Enemy (Container): movimento via Phaser.Curves.Path,
+    │   │                        sistema de dano/armadura (física+mágica), slow, regen,
+    │   │                        bosses (👑 coroa, barra de vida 3×, dano 3× contra soldados)
+    │   ├── Tower.js           ← Tower (base) + ArcherTower, MageTower, ArtilleryTower,
+    │   │                        BarracksTower + Projectile, Mine, Soldier (~640 linhas)
+    │   └── HUD.js             ← interface in-game completa (~450 linhas): barra superior,
+    │                            sidebar de torres, poderes drag & drop, painel torre/upgrade
+    │
     └── utils/
-        ├── I18n.js      ← gestor de traduções
-        ├── Settings.js  ← áudio e preferências persistentes
-        ├── TowerData.js ← stats e custos das torres
-        ├── EnemyData.js ← stats dos inimigos
-        ├── WaveData.js  ← vagas dos 4 níveis (dificuldade crescente)
-        └── PathData.js  ← caminhos, tiles e slots dos 4 níveis
+        ├── I18n.js            ← singleton de traduções PT/EN com persistência localStorage
+        ├── Settings.js        ← gestão de áudio (playSfx/playMusic) e preferências
+        ├── TowerData.js       ← stats: 4 torres × 3 níveis + 2 caminhos IV + sellValue()
+        ├── EnemyData.js       ← stats: 16 inimigos (12 normais + 4 bosses)
+        ├── WaveData.js        ← 4 níveis × 6-9 waves, bosses com preDelay, bónus
+        └── PathData.js        ← PATH_DATA (waypoints), PATH_TILES (tiles do caminho),
+                                 TOWER_SLOTS (grelha 20×10), snapToPath(), buildPath()
 ```
-
-> Os assets estão em `public/assets/` para o Vite os servir como ficheiros
-> estáticos. Em dev (`npm run dev`) ficam acessíveis em `/assets/…`.
 
 ---
 
@@ -189,7 +227,10 @@ git push origin 1.0
 
 ## Lacunas conhecidas / Trabalho futuro
 
-- Animações de spritesheet para inimigos e torres (atualmente sprites estáticos)
-- Música original (as faixas atuais são geradas proceduralmente)
-- Efeitos de câmara adicionais (parallax de fundo)
+- Modo Infinito / Survival (waves sem fim com dificuldade crescente)
+- Tutorial interativo no nível 1
+- Diferenciação visual dos mapas por nível (tileset próprio)
+- Upgrades permanentes entre níveis (talent tree com estrelas)
 - Leaderboard local com `localStorage`
+- 3ª língua (ex: espanhol)
+- Deploy em GitHub Pages
