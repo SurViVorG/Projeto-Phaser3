@@ -22,7 +22,7 @@ Cada item concluído é marcado com ✅.
 |---|---------------|--------|-------|
 | 2.1 | **Upgrades bifurcados nível 4** (estilo Kingdom Rush) — 2 caminhos exclusivos ao atingir nível III | ✅ Concluído | Cavaleiros/Assassinos, Ranger/Sniper, Gelo/Necromante, Foguete/Minas; texturas procedurais nível IV; painel HUD com seleção de caminho |
 | 2.2 | **Inimigo boss** no final de cada nível — HP elevado, barra de vida especial, coroa 👑 | ✅ Concluído | 4 bosses: Rei Troll, Golem Ancião, Senhor Demônio, Rei Lich; spawn com delay na última wave; aba Bosses na enciclopédia |
-| 2.3 | **Modo Infinito / Survival** — waves sem fim com +10% HP/speed por wave, leaderboard local | ⬜ Pendente | Reutiliza o sistema de waves existente; adicionar opção no MapScene |
+| 2.3 | **Modo Infinito / Survival** — waves sem fim com +10% HP/speed por wave, leaderboard local | ✅ Concluído | Waves procedurais (pool de inimigos alarga com a wave, boss a cada 10); +10% HP/wave, velocidade limitada a +80%; recompensa acompanha o HP; desbloqueia com ≥1★ no nível; top 5 por nível em `localStorage` no ecrã final e recorde no MapScene |
 | 2.4 | **Modo Sandbox** — mapa com ouro/vidas infinitos para testar estratégias; spawner manual de inimigos | ✅ Concluído | Acessível ao clicar num nível no MapScene; painel de spawn com seletor de inimigo/quantidade |
 
 ### Caminhos de upgrade bifurcados (2.1)

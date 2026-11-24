@@ -1,7 +1,8 @@
 import I18n    from '../utils/I18n.js';
 import Settings from '../utils/Settings.js';
 import { PATH_DATA, PATH_TILES, buildPath, snapToPath, isOnPath, TOWER_SLOTS } from '../utils/PathData.js';
-import { LEVEL_WAVES, totalWaves, waveClearBonus, waveRewardMultiplier } from '../utils/WaveData.js';
+import { totalWaves, waveClearBonus, waveRewardMultiplier,
+         getWaveDef, endlessScale, submitEndlessRun } from '../utils/WaveData.js';
 import { TOWER_DATA, sellValue } from '../utils/TowerData.js';
 import { ENEMY_DATA } from '../utils/EnemyData.js';
 import Enemy from '../entities/Enemy.js';
@@ -19,6 +20,7 @@ export default class GameScene extends Phaser.Scene {
   init(data) {
     this.level       = data.level || 1;
     this._sandbox    = data.sandbox || false;
+    this._endless    = !this._sandbox && (data.endless || false);
     this.gold        = this._sandbox ? 99999 : ([250, 250, 300, 375][this.level - 1] ?? 250);
     this.lives       = this._sandbox ? 99 : 20;
     this.score       = 0;
@@ -57,7 +59,7 @@ export default class GameScene extends Phaser.Scene {
     this._hud = new HUD(this);
     this._hud.setGold(this.gold);
     this._hud.setLives(this.lives);
-    this._hud.setWave(0, totalWaves(this.level));
+    this._hud.setWave(0, this._waveTotal());
     this._hud.setScore(this.score);
 
     // Eventos
@@ -104,7 +106,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.input.keyboard.on('keydown-R', () => {
-      this.scene.restart({ level: this.level });
+      this.scene.restart(this.restartData());
     });
 
     // Partículas
@@ -128,6 +130,11 @@ export default class GameScene extends Phaser.Scene {
       this._hud._fastBtn.setX(870);
       this._clearNextWavePreview();
       this._buildSandboxPanel();
+    }
+
+    if (this._endless) {
+      this._hud._waveText.setColor('#ce93d8');
+      this.floatText(560, 300, '∞ MODO INFINITO — sobrevive o máximo possível!', '#ce93d8');
     }
   }
 
@@ -423,19 +430,27 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ── WAVES ───────────────────────────────────────────────────────────────────
+  /** Total de waves do modo atual ('∞' no modo infinito). */
+  _waveTotal() { return this._endless ? '∞' : totalWaves(this.level); }
+
+  /** Dados para reiniciar o mesmo modo (R, pausa, game over). */
+  restartData() { return { level: this.level, endless: this._endless }; }
+
   startNextWave() {
-    if (this.waveActive) return;
-    const waves = LEVEL_WAVES[this.level];
-    if (this.waveIndex >= waves.length) return;
+    if (this.waveActive || this._gameEnded) return;
+    const waveDef = getWaveDef(this.level, this.waveIndex, this._endless);
+    if (!waveDef) return;
     this._clearNextWavePreview();
 
     this.waveActive = true;
     this._hud.setWaveActive(true);
     this._hud.resumePowerCooldowns();
-    this._hud.setWave(this.waveIndex + 1, waves.length);
+    this._hud.setWave(this.waveIndex + 1, this._waveTotal());
+
+    // Multiplicadores de HP/velocidade desta wave (só no modo infinito)
+    this._waveScale = this._endless ? endlessScale(this.waveIndex) : null;
 
     // Construir lista de spawns com delays acumulados
-    const waveDef = waves[this.waveIndex];
     const spawnList = [];
     let delay = 0;
     for (const group of waveDef) {
@@ -464,7 +479,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnEnemy(type) {
-    const enemy = new Enemy(this, type, this._path);
+    const enemy = new Enemy(this, type, this._path, this._waveScale);
     enemy.setDepth(3);
     this._enemies.push(enemy);
     if (ENEMY_DATA[type]?.boss) {
@@ -475,7 +490,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   onEnemyKilled(enemy) {
-    const mult   = waveRewardMultiplier(this.waveIndex);
+    // No infinito a recompensa acompanha o HP (+10%/wave), senão o ouro dispara
+    const mult   = this._endless ? endlessScale(this.waveIndex).hp
+                                 : waveRewardMultiplier(this.waveIndex);
     const reward = Math.round(enemy.reward * mult);
     this.addGold(reward);
     this.addScore(reward * 10);
@@ -508,8 +525,8 @@ export default class GameScene extends Phaser.Scene {
 
     this.waveIndex++;
 
-    // Vitória só quando TODAS as vagas do nível terminaram
-    if (this.waveIndex >= totalWaves(this.level)) {
+    // Vitória só quando TODAS as vagas do nível terminaram (nunca no infinito)
+    if (!this._endless && this.waveIndex >= totalWaves(this.level)) {
       this.time.delayedCall(1200, () => this.endGame(true));
     } else {
       this._showNextWavePreview(this.waveIndex);
@@ -628,10 +645,11 @@ export default class GameScene extends Phaser.Scene {
     this._hud = new HUD(this);
     this._hud.setGold(this.gold);
     this._hud.setLives(this.lives);
-    this._hud.setWave(this.waveIndex + (this.waveActive ? 1 : 0), totalWaves(this.level));
+    this._hud.setWave(this.waveIndex + (this.waveActive ? 1 : 0), this._waveTotal());
     this._hud.setScore(this.score);
     this._hud.setWaveActive(this.waveActive);
     this._hud.updateGoldState(this.gold);
+    if (this._endless) this._hud._waveText.setColor('#ce93d8');
     if (this._sandbox) {
       this._sandboxPanelObjects?.forEach(o => { try { o.destroy(); } catch (_) {} });
       this._sandboxPanelObjects = [];
@@ -645,8 +663,8 @@ export default class GameScene extends Phaser.Scene {
   // ── PRÉVIA DA PRÓXIMA ONDA ────────────────────────────────────────────────────
   _showNextWavePreview(waveIdx) {
     this._clearNextWavePreview();
-    const waves = LEVEL_WAVES[this.level];
-    if (waveIdx >= waves.length) return;
+    const waveDef = getWaveDef(this.level, waveIdx, this._endless);
+    if (!waveDef) return;
 
     const portalY = PATH_DATA[this.level][0].y;
     const ax = 75, ay = portalY;
@@ -667,7 +685,7 @@ export default class GameScene extends Phaser.Scene {
       duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
     });
 
-    const tooltip = this._buildWaveTooltip(waves[waveIdx], waveIdx, ax, ay);
+    const tooltip = this._buildWaveTooltip(waveDef, waveIdx, ax, ay);
     tooltip.setVisible(false);
 
     const show = () => tooltip.setVisible(true);
@@ -703,7 +721,9 @@ export default class GameScene extends Phaser.Scene {
     bg.strokeRect(0, 0, w, h);
     container.add(bg);
 
-    const title = this.add.text(Math.round(w / 2), pad, 'Vaga ' + (waveIdx + 1), {
+    const scaleTag = this._endless
+      ? '  (+' + Math.round((endlessScale(waveIdx).hp - 1) * 100) + '% HP)' : '';
+    const title = this.add.text(Math.round(w / 2), pad, 'Vaga ' + (waveIdx + 1) + scaleTag, {
       fontFamily: 'Georgia, serif', fontSize: '13px',
       color: '#f0c040', stroke: '#000', strokeThickness: 1
     }).setOrigin(0.5, 0);
@@ -839,10 +859,21 @@ export default class GameScene extends Phaser.Scene {
     if (this._gameEnded) return;
     this._gameEnded = true;
     this._clearNextWavePreview();
+
+    // Modo infinito: termina sempre em derrota; regista a wave alcançada
+    let endlessData = null;
+    if (this._endless) {
+      // waveIndex = waves concluídas; a wave em curso conta como alcançada
+      const reached = this.waveIndex + (this.waveActive ? 1 : 0);
+      const rank = submitEndlessRun(this.level, reached, this.score);
+      endlessData = { endless: true, wave: reached, rank };
+      this.waveActive = false;
+    }
+
     this.cameras.main.fadeOut(800, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(victory ? 'VictoryScene' : 'GameOverScene',
-        { score: this.score, level: this.level, lives: this.lives });
+        { score: this.score, level: this.level, lives: this.lives, ...endlessData });
     });
   }
 

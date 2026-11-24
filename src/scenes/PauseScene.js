@@ -126,9 +126,11 @@ export default class PauseScene extends Phaser.Scene {
     this.scene.stop();
   }
   restart() {
+    // Mantém o modo (normal / infinito) ao reiniciar
+    const data = this.gameScene?.restartData?.() ?? { level: this.level };
     this.scene.stop('GameScene');
     this.scene.stop();
-    this.scene.start('GameScene', { level: this.level });
+    this.scene.start('GameScene', data);
   }
   toMenu() {
     Settings.stopMusic();

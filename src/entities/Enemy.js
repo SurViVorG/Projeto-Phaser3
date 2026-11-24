@@ -11,8 +11,9 @@ export default class Enemy extends Phaser.GameObjects.Container {
    * @param {Phaser.Scene} scene
    * @param {string} type   — chave de ENEMY_DATA
    * @param {Phaser.Curves.Path} path
+   * @param {{hp?:number, speed?:number}} [scale] multiplicadores (modo infinito)
    */
-  constructor(scene, type, path) {
+  constructor(scene, type, path, scale = null) {
     const data = ENEMY_DATA[type];
     const pt   = path.getPoint(0);
     super(scene, pt.x, pt.y);
@@ -21,9 +22,9 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.type       = type;
     this.path       = path;
     this.pathT      = 0;
-    this.speed      = data.speed;
-    this.maxHp      = data.hp;
-    this.hp         = data.hp;
+    this.speed      = data.speed * (scale?.speed ?? 1);
+    this.maxHp      = Math.round(data.hp * (scale?.hp ?? 1));
+    this.hp         = this.maxHp;
     this.armor      = data.armor      || 0;
     this.magicArmor = data.magicArmor || 0;
     this.regen      = data.regen      || 0;

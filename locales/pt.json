@@ -98,5 +98,15 @@
     "restart": "Reiniciar",
     "options": "Opções",
     "menu": "Menu Principal"
+  },
+  "endless": {
+    "mode": "Modo Infinito",
+    "over": "Fim da Linha",
+    "reached": "Vaga alcançada:",
+    "new_record": "Novo recorde!",
+    "leaderboard": "Melhores Runs",
+    "to_map": "Mapa",
+    "best": "Recorde",
+    "locked": "Completa o nível para desbloquear"
   }
 }

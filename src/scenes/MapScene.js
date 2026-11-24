@@ -1,6 +1,6 @@
 import I18n    from '../utils/I18n.js';
 import Settings from '../utils/Settings.js';
-import { totalWaves } from '../utils/WaveData.js';
+import { totalWaves, getEndlessLeaderboard } from '../utils/WaveData.js';
 
 // Lê desbloqueios do localStorage
 function getLevels() {
@@ -166,7 +166,7 @@ export default class MapScene extends Phaser.Scene {
   _showLevelModal(lvl) {
     this._closeModal();
     const W = 1280, H = 720;
-    const mW = 420, mH = 250;
+    const mW = 420, mH = 330;
     const cx = W / 2, cy = H / 2;
 
     const backdrop = this.add.rectangle(cx, cy, W, H, 0x000000, 0.6)
@@ -180,12 +180,12 @@ export default class MapScene extends Phaser.Scene {
     bg.strokeRoundedRect(cx - mW / 2, cy - mH / 2, mW, mH, 12);
 
     const displayName = I18n.getLang() === 'en' ? (lvl.nameEN || lvl.name) : lvl.name;
-    const title = this.add.text(cx, cy - mH / 2 + 30,
+    const title = this.add.text(cx, cy - mH / 2 + 28,
       'Nível ' + lvl.id + '  —  ' + displayName, {
       fontFamily: 'Georgia, serif', fontSize: '18px', color: '#c8960c'
     }).setOrigin(0.5).setDepth(31);
 
-    const startBtn = this.add.text(cx, cy - 22, '▶  Iniciar Nível', {
+    const startBtn = this.add.text(cx, cy - 92, '▶  Iniciar Nível', {
       fontFamily: 'Georgia, serif', fontSize: '22px',
       color: '#00e676', backgroundColor: '#0d2b0d',
       padding: { x: 28, y: 12 }
@@ -199,7 +199,7 @@ export default class MapScene extends Phaser.Scene {
         this.scene.start('GameScene', { level: lvl.id }));
     });
 
-    const sandboxBtn = this.add.text(cx, cy + 52, '⚙  Modo Sandbox', {
+    const sandboxBtn = this.add.text(cx, cy - 22, '⚙  Modo Sandbox', {
       fontFamily: 'Georgia, serif', fontSize: '22px',
       color: '#fdd835', backgroundColor: '#1a1500',
       padding: { x: 28, y: 12 }
@@ -213,6 +213,33 @@ export default class MapScene extends Phaser.Scene {
         this.scene.start('GameScene', { level: lvl.id, sandbox: true }));
     });
 
+    // Modo Infinito — desbloqueia ao completar o nível (≥ 1 estrela)
+    const endlessOpen = lvl.stars > 0;
+    const best = getEndlessLeaderboard(lvl.id)[0];
+    const endlessBtn = this.add.text(cx, cy + 48, '∞  ' + I18n.t('endless.mode'), {
+      fontFamily: 'Georgia, serif', fontSize: '22px',
+      color: endlessOpen ? '#ce93d8' : '#666',
+      backgroundColor: endlessOpen ? '#1a0d22' : '#151515',
+      padding: { x: 28, y: 12 }
+    }).setOrigin(0.5).setDepth(31);
+    const endlessInfo = this.add.text(cx, cy + 92,
+      !endlessOpen ? '🔒 ' + I18n.t('endless.locked')
+        : best ? '🏆 ' + I18n.t('endless.best') + ': ' + I18n.t('hud.wave') + ' ' + best.wave + ' · ' + best.score
+        : '', {
+      fontFamily: 'monospace', fontSize: '12px', color: endlessOpen ? '#b39ddb' : '#777'
+    }).setOrigin(0.5).setDepth(31);
+    if (endlessOpen) {
+      endlessBtn.setInteractive({ useHandCursor: true });
+      endlessBtn.on('pointerover', () => endlessBtn.setColor('#e1bee7'));
+      endlessBtn.on('pointerout',  () => endlessBtn.setColor('#ce93d8'));
+      endlessBtn.on('pointerdown', () => {
+        this._closeModal();
+        this.cameras.main.fadeOut(400, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () =>
+          this.scene.start('GameScene', { level: lvl.id, endless: true }));
+      });
+    }
+
     const cancelTxt = this.add.text(cx, cy + mH / 2 - 18, '✕ Cancelar', {
       fontFamily: 'monospace', fontSize: '13px', color: '#666'
     }).setOrigin(0.5).setDepth(31).setInteractive({ useHandCursor: true });
@@ -220,7 +247,7 @@ export default class MapScene extends Phaser.Scene {
     cancelTxt.on('pointerout',  () => cancelTxt.setColor('#666'));
     cancelTxt.on('pointerdown', () => this._closeModal());
 
-    this._modal = [backdrop, bg, title, startBtn, sandboxBtn, cancelTxt];
+    this._modal = [backdrop, bg, title, startBtn, sandboxBtn, endlessBtn, endlessInfo, cancelTxt];
   }
 
   _closeModal() {

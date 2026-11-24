@@ -1,5 +1,6 @@
 import I18n    from '../utils/I18n.js';
 import Settings from '../utils/Settings.js';
+import { getEndlessLeaderboard } from '../utils/WaveData.js';
 
 // ─── GAME OVER ───────────────────────────────────────────────────────────────
 export default class GameOverScene extends Phaser.Scene {
@@ -8,7 +9,13 @@ export default class GameOverScene extends Phaser.Scene {
   init(data) {
     this.finalScore = data.score || 0;
     this.level      = data.level || 1;
+    this.endless    = data.endless || false;
+    this.waveReached = data.wave ?? 0;
+    this.rank       = data.rank ?? -1;
   }
+
+  /** Dados para voltar a jogar no mesmo modo. */
+  retryData() { return { level: this.level, endless: this.endless }; }
 
   create() {
     const W = 1280, H = 720;
@@ -30,6 +37,11 @@ export default class GameOverScene extends Phaser.Scene {
       });
     }
 
+    if (this.endless) {
+      this.buildEndless();
+      return;
+    }
+
     // Título
     this.add.text(640, 180, I18n.t('gameover.title'), {
       fontFamily: 'Georgia, serif', fontSize: '80px',
@@ -49,7 +61,7 @@ export default class GameOverScene extends Phaser.Scene {
     this.createBtn(640, 460, I18n.t('gameover.retry'), () => {
       this.cameras.main.fadeOut(400);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('GameScene', { level: this.level });
+        this.scene.start('GameScene', this.retryData());
       });
     }, '#00e676');
 
@@ -62,8 +74,72 @@ export default class GameOverScene extends Phaser.Scene {
 
     // Tecla R
     this.input.keyboard.on('keydown-R', () => {
-      this.scene.start('GameScene', { level: this.level });
+      this.scene.start('GameScene', this.retryData());
     });
+  }
+
+  // ── Resultado do modo infinito + leaderboard local ─────────────────────────
+  buildEndless() {
+    this.add.text(640, 70, '∞ ' + I18n.t('endless.over'), {
+      fontFamily: 'Georgia, serif', fontSize: '56px',
+      color: '#ce93d8', stroke: '#000', strokeThickness: 6
+    }).setOrigin(0.5);
+
+    this.add.text(640, 140,
+      I18n.t('endless.reached') + ' ' + this.waveReached + '   ·   ' +
+      I18n.t('gameover.score') + ': ' + this.finalScore, {
+      fontFamily: 'monospace', fontSize: '24px', color: '#fdd835'
+    }).setOrigin(0.5);
+
+    if (this.rank === 0) {
+      const rec = this.add.text(640, 180, '★ ' + I18n.t('endless.new_record') + ' ★', {
+        fontFamily: 'Georgia, serif', fontSize: '22px', color: '#00e676',
+        stroke: '#000', strokeThickness: 3
+      }).setOrigin(0.5);
+      this.tweens.add({ targets: rec, scale: 1.12, duration: 600, yoyo: true, repeat: -1 });
+    }
+
+    // Tabela top 5
+    const x0 = 440, w = 400, y0 = 215, rowH = 34;
+    const g = this.add.graphics();
+    g.fillStyle(0x1a0f22, 0.92);
+    g.fillRoundedRect(x0, y0, w, 52 + 5 * rowH, 10);
+    g.lineStyle(2, 0xce93d8, 0.7);
+    g.strokeRoundedRect(x0, y0, w, 52 + 5 * rowH, 10);
+
+    this.add.text(640, y0 + 20, '🏆 ' + I18n.t('endless.leaderboard'), {
+      fontFamily: 'Georgia, serif', fontSize: '20px', color: '#ce93d8'
+    }).setOrigin(0.5);
+
+    const list = getEndlessLeaderboard(this.level);
+    for (let i = 0; i < 5; i++) {
+      const e = list[i];
+      const y = y0 + 58 + i * rowH;
+      const mine = i === this.rank;
+      const color = mine ? '#00e676' : e ? '#e0e0e0' : '#555';
+      if (mine) {
+        g.fillStyle(0x00e676, 0.12);
+        g.fillRect(x0 + 8, y - rowH / 2 + 2, w - 16, rowH - 4);
+      }
+      const style = { fontFamily: 'monospace', fontSize: '17px', color };
+      this.add.text(x0 + 24,  y, (i + 1) + '.', style).setOrigin(0, 0.5);
+      this.add.text(x0 + 60,  y, e ? I18n.t('hud.wave') + ' ' + e.wave : '—', style).setOrigin(0, 0.5);
+      this.add.text(x0 + 200, y, e ? String(e.score) : '', style).setOrigin(0, 0.5);
+      this.add.text(x0 + w - 20, y, e ? e.date : '', { ...style, fontSize: '13px' }).setOrigin(1, 0.5);
+    }
+
+    this.createBtn(640, 520, I18n.t('gameover.retry'), () => {
+      this.cameras.main.fadeOut(400);
+      this.cameras.main.once('camerafadeoutcomplete', () =>
+        this.scene.start('GameScene', this.retryData()));
+    }, '#00e676');
+
+    this.createBtn(640, 600, I18n.t('endless.to_map'), () => {
+      this.cameras.main.fadeOut(400);
+      this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('MapScene'));
+    }, '#d4a56a');
+
+    this.input.keyboard.on('keydown-R', () => this.scene.start('GameScene', this.retryData()));
   }
 
   createBtn(x, y, label, cb, color = '#fff') {

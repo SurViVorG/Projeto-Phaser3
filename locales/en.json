@@ -98,5 +98,15 @@
     "restart": "Restart",
     "options": "Options",
     "menu": "Main Menu"
+  },
+  "endless": {
+    "mode": "Endless Mode",
+    "over": "The End",
+    "reached": "Wave reached:",
+    "new_record": "New record!",
+    "leaderboard": "Best Runs",
+    "to_map": "Map",
+    "best": "Best",
+    "locked": "Complete the level to unlock"
   }
 }
