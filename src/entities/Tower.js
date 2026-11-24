@@ -335,6 +335,8 @@ export class ArtilleryTower extends Tower {
           if (d <= splash) {
             if (ae.takeDamage(dmg * (1 - d / splash), false, false))
               this.scene.events.emit('enemyKilled', ae);
+            else if (this.stats.burnMs)
+              ae.applyBurn(this.stats.burnMs, this.stats.burnDps);
           }
         }
       }

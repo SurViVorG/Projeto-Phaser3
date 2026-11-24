@@ -1,6 +1,11 @@
 import { ENEMY_DATA } from '../utils/EnemyData.js';
 import Settings from '../utils/Settings.js';
 
+// Cores dos estados visuais
+const TINT_SLOW = 0x88ccff;   // lento  → azul
+const TINT_BURN = 0xff9944;   // em fogo → laranja
+const BURN_TICK = 500;        // ms entre ticks de dano de queimadura
+
 export default class Enemy extends Phaser.GameObjects.Container {
   /**
    * @param {Phaser.Scene} scene
@@ -27,7 +32,14 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.reward     = data.reward;
     this.damage     = data.damage;
     this.alive      = true;
+    // Estados — medidos no relógio interno do inimigo (_clock), que avança com
+    // o dt do jogo: respeita pausa e modo rápido (ao contrário de Date.now()).
+    this._clock     = 0;
     this.slowUntil  = 0;
+    this.burnUntil  = 0;
+    this.burnDps    = 0;
+    this._burnAcc   = 0;
+    this._tintState = null;
     this._soldiers  = [];
 
     // ── Sprite animado ────────────────────────────────────────────────────
@@ -80,18 +92,61 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this._pathLen = path.getLength();
   }
 
-  update(delta) {
-    if (!this.alive) return;
+  get isSlowed()  { return this._clock < this.slowUntil; }
+  get isBurning() { return this._clock < this.burnUntil; }
 
-    // Regeneração (troll)
-    if (this.regen > 0 && this.hp < this.maxHp) {
+  /**
+   * Avança estados (slow/queimadura), regen e tint. Chamado todos os frames,
+   * mesmo quando o inimigo está bloqueado por soldados.
+   * @returns {boolean} true se o inimigo morreu por queimadura neste frame
+   */
+  tickStatus(delta) {
+    if (!this.alive) return false;
+    this._clock += delta;
+
+    // Regeneração (troll) — não regenera enquanto arde
+    if (this.regen > 0 && this.hp < this.maxHp && !this.isBurning) {
       this.hp = Math.min(this.maxHp, this.hp + this.regen * delta / 1000);
       this.updateBar();
     }
 
+    // Queimadura — dano verdadeiro em ticks
+    let died = false;
+    if (this.isBurning) {
+      this._burnAcc += delta;
+      while (this._burnAcc >= BURN_TICK && this.alive) {
+        this._burnAcc -= BURN_TICK;
+        died = this.takeDamage(this.burnDps * BURN_TICK / 1000, false, true, 'burn');
+      }
+    } else {
+      this._burnAcc = 0;
+      this.burnDps  = 0;
+    }
+
+    if (this.alive) this._refreshTint();
+    return died;
+  }
+
+  /** Aplica o tint do estado atual; ambos os estados alternam a cada 250 ms. */
+  _refreshTint() {
+    const slow = this.isSlowed, burn = this.isBurning;
+    let state = null;
+    if (slow && burn) state = (Math.floor(this._clock / 250) % 2) ? 'slow' : 'burn';
+    else if (burn)    state = 'burn';
+    else if (slow)    state = 'slow';
+    if (state === this._tintState) return;
+    this._tintState = state;
+    if (!this._sprite) return;
+    if (state === 'burn')      this._sprite.setTint(TINT_BURN);
+    else if (state === 'slow') this._sprite.setTint(TINT_SLOW);
+    else                       this._sprite.clearTint();
+  }
+
+  update(delta) {
+    if (!this.alive) return;
+
     // Velocidade com slow
-    const now = Date.now();
-    const spd = (now < this.slowUntil) ? this.speed * 0.4 : this.speed;
+    const spd = this.isSlowed ? this.speed * 0.4 : this.speed;
     const tDelta = (spd / this._pathLen) * (delta / 1000);
     this.pathT += tDelta;
 
@@ -110,8 +165,9 @@ export default class Enemy extends Phaser.GameObjects.Container {
    * @param {number} amount     dano base
    * @param {boolean} isMagic   true = dano mágico (aplica magicArmor em vez de armor)
    * @param {boolean} ignoreAll true = ignora toda a armadura
+   * @param {string}  [source]  'burn' = dano de queimadura (número laranja)
    */
-  takeDamage(amount, isMagic = false, ignoreAll = false) {
+  takeDamage(amount, isMagic = false, ignoreAll = false, source = null) {
     if (!this.alive) return false;
     let eff;
     if (ignoreAll) {
@@ -126,20 +182,35 @@ export default class Enemy extends Phaser.GameObjects.Container {
     if (Settings.dmgNumbers && eff >= 1) {
       this.scene.events.emit('damageFloat',
         this.x, this.y - this.data_ref.size - 8,
-        Math.round(eff), isMagic);
+        Math.round(eff), isMagic, source);
     }
     if (this.hp <= 0) { this.die(); return true; }
     return false;
   }
 
   applySlow(ms) {
-    this.slowUntil = Math.max(this.slowUntil, Date.now() + ms);
-    this.list[0]?.setTint(0x88ccff);
+    if (!this.alive) return;
+    this.slowUntil = Math.max(this.slowUntil, this._clock + ms);
+    this._refreshTint();
+  }
+
+  /**
+   * Incendeia o inimigo. Reaplicar renova a duração e mantém o dps mais alto.
+   * @param {number} ms   duração
+   * @param {number} dps  dano por segundo (ignora armadura)
+   */
+  applyBurn(ms, dps) {
+    if (!this.alive) return;
+    if (!this.isBurning) this._burnAcc = 0;
+    this.burnUntil = Math.max(this.burnUntil, this._clock + ms);
+    this.burnDps   = Math.max(this.burnDps, dps);
+    this._refreshTint();
   }
 
   die() {
     this.alive = false;
     this._sprite?.stop();
+    this._sprite?.clearTint();
     this.scene.tweens.add({
       targets: this, alpha: 0, scaleX: 1.4, scaleY: 1.4,
       duration: 280,

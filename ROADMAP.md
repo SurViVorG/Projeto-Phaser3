@@ -42,7 +42,7 @@ Cada item concluído é marcado com ✅.
 |---|---------------|--------|-------|
 | 3.1 | **Tutorial interativo no nível 1** — setas/tooltips que guiam o primeiro jogo | ⬜ Pendente | Essencial para novos jogadores sem contexto |
 | 3.2 | **Diferenciação visual dos mapas** — tileset próprio por nível (floresta · pedra · lava · abismo) | ⬜ Pendente | Substituir `tile_ground` e `tile_path` por nível no `PreloadScene` |
-| 3.3 | **Estados visuais nos inimigos** — lento = tint azul, em fogo = tint laranja | ⬜ Pendente | `setTint()` no sprite — trivial, melhora muito a leitura |
+| 3.3 | **Estados visuais nos inimigos** — lento = tint azul, em fogo = tint laranja | ✅ Concluído | Tint azul (slow) / laranja (queimadura), alternam se ambos; nova queimadura (meteoro 20 dps/4 s, Foguete 12 dps/2.5 s, números laranja, trava regen); estados usam relógio do jogo (respeitam pausa e modo rápido) |
 | 3.4 | **Modo de dificuldade** — Normal / Difícil / Inferno (multiplica HP e ajusta recompensas) | ⬜ Pendente | Passado como parâmetro ao `GameScene`; multiplica stats em `Enemy.js` |
 
 ---

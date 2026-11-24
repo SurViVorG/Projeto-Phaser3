@@ -79,7 +79,8 @@ export const TOWER_DATA = {
     paths: {
       A: { label: 'Foguete', labelEN: 'Rocket',     cost: 250,
            damage: 120, range: 265, fireRate: 2000, splashRadius: 160, hitsFlying: true,
-           description: 'Atinge voadores · splash aéreo' },
+           burnMs: 2500, burnDps: 12,
+           description: 'Atinge voadores · splash aéreo · incendeia' },
       B: { label: 'Minas',   labelEN: 'Land Mines', cost: 250,
            damage: 200, range: 245, splashRadius: 80, mineDelay: 4000, maxMines: 10,
            description: 'Coloca minas auto no caminho (máx 10)' }

@@ -430,6 +430,7 @@ export default class HUD {
       stats.piercing  ? '↠ Flechas perfurantes'   : null,
       stats.ignoreArmor ? '⚔ Ignora armadura'     : null,
       stats.hitsFlying  ? '🚀 Atinge voadores'    : null,
+      stats.burnMs      ? `🔥 Incendeia: ${stats.burnDps} dps / ${stats.burnMs / 1000}s` : null,
       stats.necromancy  ? '☠ Revive inimigos'     : null,
       stats.maxMines    ? `💣 Minas: ${tower._mines?.length ?? 0}/${stats.maxMines}` : null
     ].filter(Boolean);

@@ -68,8 +68,8 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('setRally',      (tower, px, py) => this.setTowerRally(tower, px, py));
     this.events.on('startRallyMode', (tower) => this.enterRallyMode(tower));
 
-    this.events.on('damageFloat', (x, y, amount, isMagic) => {
-      const color = isMagic ? '#ce93d8' : '#ff5252';
+    this.events.on('damageFloat', (x, y, amount, isMagic, source) => {
+      const color = source === 'burn' ? '#ff9944' : isMagic ? '#ce93d8' : '#ff5252';
       const txt = this.add.text(x, y, '-' + amount, {
         fontFamily: 'monospace', fontSize: '12px',
         color, stroke: '#000', strokeThickness: 2
@@ -556,6 +556,7 @@ export default class GameScene extends Phaser.Scene {
             // Meteorito ignora toda a armadura
             const died = e.takeDamage(dmg, false, true);
             if (died) this.events.emit('enemyKilled', e);
+            else e.applyBurn(4000, 20);   // Fica em fogo: 20 dps durante 4 s
           }
         }
       }
@@ -861,6 +862,11 @@ export default class GameScene extends Phaser.Scene {
         toRemove.push(e);
         this._aliveCount--;
         this._checkWaveEnd();
+        continue;
+      }
+      // Estados (slow/queimadura) avançam mesmo com o inimigo bloqueado
+      if (e.tickStatus(dt)) {
+        this.events.emit('enemyKilled', e);
         continue;
       }
       if (e.isBlocked()) {

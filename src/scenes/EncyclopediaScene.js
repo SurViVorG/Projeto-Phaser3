@@ -593,7 +593,7 @@ export default class EncyclopediaScene extends Phaser.Scene {
       [isEN ? 'Edge damage'    : 'Dano na periferia', isEN ? 'Decreases with dist.' : 'Decresce com dist.'],
       [isEN ? 'Armor bypass'   : 'Ignora armadura',   isEN ? 'All armor ignored' : 'Toda (incluindo magia)'],
       [isEN ? 'Affects flyers' : 'Afeta voadores',    isEN ? 'Yes' : 'Sim'],
-      [isEN ? 'Stun'           : 'Atordoamento',      isEN ? 'None' : 'Nenhum'],
+      [isEN ? 'Burn'           : 'Queimadura',        isEN ? '20 dps for 4s' : '20 dps durante 4s'],
     ]);
   }
 
